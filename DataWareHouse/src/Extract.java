@@ -5,10 +5,10 @@ import com.opencsv.CSVWriter;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
-import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,13 +17,19 @@ import java.util.stream.Collectors;
  */
 
 public class Extract {
+    // Configuration file path
     private static final String FILE_CONFIG = "\\config.properties";
+
+    // API Key, URL, and list of cities
     static String apiKey;
     static String url;
     static List<String> cities;
-    static String pathSource;
 
-    //1. Load attributes from the configuration file
+    // ScriptGetData instance and configuration data list
+    static ScriptGetData scriptGetData;
+    static Map<String, String> config = scriptGetData.loadDefaultConfig();
+
+    // Load attributes from the configuration file
     static{
         Properties properties = new Properties();
         InputStream inputStream = null;
@@ -35,7 +41,6 @@ public class Extract {
             // get property by name
             apiKey = properties.getProperty("apiKey");
             url = properties.getProperty("url");
-            pathSource = properties.getProperty("path.source");
             cities = convertCities(properties.getProperty("cities"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -51,20 +56,33 @@ public class Extract {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        //2. Create file datasource with pathSource
+    /**
+     * Extracts data from a weather API for multiple cities and writes the results to a CSV file.
+     *
+     * @return The path of the CSV file containing the extracted data.
+     * @throws IOException If an I/O error occurs during the data extraction or CSV writing.
+     */
+    public static String getData() throws IOException {
+        //Create file datasource with pathSource
+        DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("dd-MM-yy_HH-mm-ss");
+        LocalDateTime now = LocalDateTime.now();
+        String fileName = dtf_file.format(now);
+        Map<String, String> configData = config;
+        String pathFileCsv = configData.get("pathFileCsv");
+        String pathSource = pathFileCsv + "_" + fileName + ".csv";
         CSVWriter writer = new CSVWriter(new FileWriter(pathSource));
-        // 3. loop i (city)
+
+        // loop i (city)
         Iterator<String> iterator = cities.iterator();
 
         while (iterator.hasNext()){
             String city = iterator.next();
-            //4. Connect URL API with city
+            //Connect URL API with city
             String urlCity = String.format(url, city.replace(" ", "%20"), apiKey);
             URL url = new URL(urlCity);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            //5. Get Response Code
+
             int responseCode = connection.getResponseCode();
             //Get ResponseCode
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -77,17 +95,17 @@ public class Extract {
                 }
                 reader.close();
 
-                //7. Parse JSON response with Gson
+                //Parse JSON response with Gson
                 JsonParser parser = new JsonParser();
                 JsonObject jsonResponse = parser.parse(response.toString()).getAsJsonObject();
 
-                //8. Loop through forecast data and write to CSV
+                //Loop through forecast data and write to CSV
                 JsonArray forecasts = jsonResponse.getAsJsonArray("list");
                 for (int i = 0; i < forecasts.size(); i++) {
-                    // 9.Create an ArrayList to hold all the data for each forecast entry
+                    //Create an ArrayList to hold all the data for each forecast entry
                     List<String> data = new ArrayList<>();
 
-                    //10. add data of forecast to arraylist
+                    //Add data of forecast to arraylist
                     JsonObject forecast = forecasts.get(i).getAsJsonObject();
                     JsonObject cityInfo = jsonResponse.getAsJsonObject("city");
 
@@ -135,16 +153,22 @@ public class Extract {
                     } else {
                         data.add(""); // If "rain" data is null, add an empty string
                     }
-                    //11.Write data from arraylist to CSV
+                    //Time now
+                    LocalDateTime dtf = LocalDateTime.now();
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    data.add(dtf.format(formatter));
+
+                    //Write data from arraylist to CSV
                     writer.writeNext(data.toArray(new String[0]));
                 }
             }
             else {
-                //12. Print failed fetch data
+                //Print failed fetch data
                 System.out.println("Failed to fetch data. Response code: " + responseCode);
             }
         }
         writer.close();
+        return pathSource;
     }
 
     /**
@@ -158,5 +182,131 @@ public class Extract {
     private static List<String> convertCities(String cities){
         // Split the string into an array of strings, trim each string, and then collect into a list
         return Arrays.stream(cities.split(",")).map(String::trim).collect(Collectors.toList());
+    }
+
+    /**
+     * Test method for extracting data. Uncomment and run to test data extraction.
+     *
+     * @param args Command line arguments.
+     * @throws IOException If an I/O error occurs during the data extraction or CSV writing.
+     */
+    public static void main(String[] args) throws IOException {
+//        getData();
+        getDataDefault("D:\\Test");
+    }
+
+
+    /**
+     * Retrieves weather data for multiple cities from a weather API, parses the response, and writes the results to a CSV file.
+     *
+     * @param pathFileCsv The path where the CSV file will be saved.
+     * @return The path of the CSV file containing the extracted data.
+     * @throws IOException If an I/O error occurs during the data extraction or CSV writing.
+     */
+    private static String getDataDefault(String pathFileCsv) throws IOException {
+        //Create file datasource with pathSource
+        DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("dd-MM-yy_HH-mm-ss");
+        LocalDateTime now = LocalDateTime.now();
+        String fileName = dtf_file.format(now);
+        String pathSource = pathFileCsv + "_" + fileName + ".csv";
+        CSVWriter writer = new CSVWriter(new FileWriter(pathSource));
+
+        // loop i (city)
+        Iterator<String> iterator = cities.iterator();
+
+        while (iterator.hasNext()){
+            String city = iterator.next();
+            //Connect URL API with city
+            String urlCity = String.format(url, city.replace(" ", "%20"), apiKey);
+            URL url = new URL(urlCity);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            //Get ResponseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                //6. Get Data from response
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                //Parse JSON response with Gson
+                JsonParser parser = new JsonParser();
+                JsonObject jsonResponse = parser.parse(response.toString()).getAsJsonObject();
+
+                //Loop through forecast data and write to CSV
+                JsonArray forecasts = jsonResponse.getAsJsonArray("list");
+                for (int i = 0; i < forecasts.size(); i++) {
+                    //Create an ArrayList to hold all the data for each forecast entry
+                    List<String> data = new ArrayList<>();
+
+                    //Add data of forecast to arraylist
+                    JsonObject forecast = forecasts.get(i).getAsJsonObject();
+                    JsonObject cityInfo = jsonResponse.getAsJsonObject("city");
+
+                    // Add city information
+                    data.add(cityInfo.get("id").getAsString());
+                    data.add(cityInfo.get("name").getAsString());
+                    data.add(cityInfo.getAsJsonObject("coord").get("lat").getAsString());
+                    data.add(cityInfo.getAsJsonObject("coord").get("lon").getAsString());
+                    data.add(cityInfo.get("country").getAsString());
+                    data.add(cityInfo.get("population").getAsString());
+                    data.add(cityInfo.get("timezone").getAsString());
+                    data.add(cityInfo.get("sunrise").getAsString());
+                    data.add(cityInfo.get("sunset").getAsString());
+
+                    // Add forecast information
+                    data.add(forecast.get("dt").getAsString());
+                    JsonObject mainData = forecast.getAsJsonObject("main");
+                    data.add(mainData.get("temp").getAsString());
+                    data.add(mainData.get("feels_like").getAsString());
+                    data.add(mainData.get("temp_min").getAsString());
+                    data.add(mainData.get("temp_max").getAsString());
+                    data.add(mainData.get("pressure").getAsString());
+                    data.add(mainData.get("humidity").getAsString());
+
+                    JsonArray weatherArray = forecast.getAsJsonArray("weather");
+                    JsonObject weatherData = weatherArray.get(0).getAsJsonObject();
+                    data.add(weatherData.get("id").getAsString());
+                    data.add(weatherData.get("main").getAsString());
+                    data.add(weatherData.get("description").getAsString());
+
+                    JsonObject cloudsData = forecast.getAsJsonObject("clouds");
+                    data.add(cloudsData.get("all").getAsString());
+
+                    JsonObject windData = forecast.getAsJsonObject("wind");
+                    data.add(windData.get("speed").getAsString());
+                    data.add(windData.get("deg").getAsString());
+                    data.add(windData.get("gust").getAsString());
+
+                    data.add(forecast.get("visibility").getAsString());
+                    data.add(forecast.get("pop").getAsString());
+
+                    JsonObject rainData = forecast.getAsJsonObject("rain");
+                    if (rainData != null) {
+                        data.add(rainData.get("3h").getAsString());
+                    } else {
+                        data.add(""); // If "rain" data is null, add an empty string
+                    }
+                    //Time now
+                    LocalDateTime dtf = LocalDateTime.now();
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    data.add(dtf.format(formatter));
+
+                    //Write data from arraylist to CSV
+                    writer.writeNext(data.toArray(new String[0]));
+                }
+            }
+            else {
+                //Print failed fetch data
+                System.out.println("Failed to fetch data. Response code: " + responseCode);
+            }
+        }
+        writer.close();
+        return pathSource;
     }
 }

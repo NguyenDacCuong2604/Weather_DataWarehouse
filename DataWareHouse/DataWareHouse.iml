@@ -10,5 +10,6 @@
     <orderEntry type="library" name="google.code.gson" level="project" />
     <orderEntry type="library" name="opencsv" level="project" />
     <orderEntry type="library" name="sun.mail.javax" level="project" />
+    <orderEntry type="library" name="mysql.connector.java" level="project" />
   </component>
 </module>
