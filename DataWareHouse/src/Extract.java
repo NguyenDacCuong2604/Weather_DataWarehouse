@@ -105,6 +105,11 @@ public class Extract {
                     //Create an ArrayList to hold all the data for each forecast entry
                     List<String> data = new ArrayList<>();
 
+                    //Add data des
+                    data.add(jsonResponse.get("cod").getAsString());
+                    data.add(jsonResponse.get("message").getAsString());
+                    data.add(jsonResponse.get("cnt").getAsString());
+
                     //Add data of forecast to arraylist
                     JsonObject forecast = forecasts.get(i).getAsJsonObject();
                     JsonObject cityInfo = jsonResponse.getAsJsonObject("city");
@@ -122,19 +127,24 @@ public class Extract {
 
                     // Add forecast information
                     data.add(forecast.get("dt").getAsString());
+                    data.add(forecast.get("dt_txt").getAsString());
                     JsonObject mainData = forecast.getAsJsonObject("main");
                     data.add(mainData.get("temp").getAsString());
                     data.add(mainData.get("feels_like").getAsString());
                     data.add(mainData.get("temp_min").getAsString());
                     data.add(mainData.get("temp_max").getAsString());
                     data.add(mainData.get("pressure").getAsString());
+                    data.add(mainData.get("sea_level").getAsString());
+                    data.add(mainData.get("grnd_level").getAsString());
                     data.add(mainData.get("humidity").getAsString());
+                    data.add(mainData.get("temp_kf").getAsString());
 
                     JsonArray weatherArray = forecast.getAsJsonArray("weather");
                     JsonObject weatherData = weatherArray.get(0).getAsJsonObject();
                     data.add(weatherData.get("id").getAsString());
                     data.add(weatherData.get("main").getAsString());
                     data.add(weatherData.get("description").getAsString());
+                    data.add(weatherData.get("icon").getAsString());
 
                     JsonObject cloudsData = forecast.getAsJsonObject("clouds");
                     data.add(cloudsData.get("all").getAsString());
@@ -153,6 +163,10 @@ public class Extract {
                     } else {
                         data.add(""); // If "rain" data is null, add an empty string
                     }
+
+                    JsonObject sysData = forecast.getAsJsonObject("sys");
+                    data.add(sysData.get("pod").getAsString());
+
                     //Time now
                     LocalDateTime dtf = LocalDateTime.now();
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -163,8 +177,18 @@ public class Extract {
                 }
             }
             else {
-                //Print failed fetch data
-                System.out.println("Failed to fetch data. Response code: " + responseCode);
+                // Handle IOException by logging the error and sending mail to the author.
+                ScriptGetData.insertFileLog(Integer.parseInt(config.get("id_config")), config.get("status1"), config.get("author"), config.get("status5"));
+                PrintWriter pw = ScriptGetData.printErr();
+                pw.println("Failed to fetch data. Response code: 404 with city: "+city);
+                pw.close();
+                // Send mail to the author with error details.
+                String mail = config.get("mail");
+                String file_name = config.get("file_name");
+                String timeNow = ScriptGetData.timeNow();
+                String subject = "Error Date: " + timeNow;
+                String message = "Error in file_name: " + file_name + ", Time: " + timeNow;
+                MailService.sendMail(mail, subject, message, config.get("PathFileError"));
             }
         }
         writer.close();

@@ -221,12 +221,11 @@ public class ScriptGetData {
         // Load the default configuration to get the error log file path
         Map<String, String> pathFile = loadDefaultConfig();
         String pathFileError = pathFile.get("PathFileError");
-        String nameFile = pathFileError + "\\Error.txt";
-        File f = new File(nameFile);
 
         try {
+            File file = new File(pathFileError);
             // Initialize an OutputStream for appending to the error log file
-            OutputStream os = new FileOutputStream(f, true);
+            OutputStream os = new FileOutputStream(file, true);
             // Initialize a PrintWriter with the OutputStream
             PrintWriter pw = new PrintWriter(os);
             // Print the current time to the error log file
@@ -238,6 +237,8 @@ public class ScriptGetData {
             e.printStackTrace();
             // Return null to indicate that the PrintWriter could not be initialized.
             return null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
