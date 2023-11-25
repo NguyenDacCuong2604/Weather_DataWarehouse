@@ -1,0 +1,1 @@
+mysqlimport --local --user=root --password=root --fields-terminated-by=',' --fields-optionally-enclosed-by='"' database_name /path/to/your/file.csv
