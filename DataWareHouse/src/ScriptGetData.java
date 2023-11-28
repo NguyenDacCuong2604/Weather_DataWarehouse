@@ -1,3 +1,5 @@
+import util.SendMail;
+
 import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -77,7 +79,7 @@ public class ScriptGetData {
             String timeNow = timeNow();
             String subject = "Error Date: " + timeNow;
             String message = "Error in file_name: " + file_name + ", Time: " + timeNow;
-            MailService.sendMail(mail, subject, message, PathFileError);
+            SendMail.sendMail(mail, subject, message, PathFileError);
         }
     }
 

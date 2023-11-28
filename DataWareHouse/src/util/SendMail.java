@@ -1,3 +1,5 @@
+package util;
+
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
@@ -37,7 +39,7 @@ import java.util.Properties;
  * }
  * ```
  */
-public class MailService {
+public class SendMail {
     private static final String FILE_CONFIG = "\\config.properties";
     private static String email;
     private static String password;
@@ -214,6 +216,6 @@ public class MailService {
     public static void main(String[] args) {
         String email = "20130203@st.hcmuaf.edu.vn";
         String content = "Lỗi rôì. fix đi!";
-        MailService.sendMail(email,"Data Warehouse 2023",content, "C:\\Users\\pc\\Documents\\Zalo Received Files\\DataWareHouse-master\\datawarehouse\\.project");
+        SendMail.sendMail(email,"Data Warehouse 2023",content, "C:\\Users\\pc\\Documents\\Zalo Received Files\\DataWareHouse-master\\datawarehouse\\.project");
     }
 }

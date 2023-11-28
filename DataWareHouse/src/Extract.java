@@ -2,11 +2,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.opencsv.CSVWriter;
+import util.SendMail;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -188,7 +188,7 @@ public class Extract {
                 String timeNow = ScriptGetData.timeNow();
                 String subject = "Error Date: " + timeNow;
                 String message = "Error in file_name: " + file_name + ", Time: " + timeNow;
-                MailService.sendMail(mail, subject, message, config.get("PathFileError"));
+                SendMail.sendMail(mail, subject, message, config.get("PathFileError"));
             }
         }
         writer.close();
