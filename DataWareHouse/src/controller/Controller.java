@@ -60,7 +60,7 @@ public class Controller {
 
     public void getData(Connection connection, Config config) {
         ForecastResultsDao dao = new ForecastResultsDao();
-        dao.updateStatus(connection, config.getId(), "TAKING");
+        dao.updateStatus(connection, config.getId(), "CRAWLING");
 
         //Create file datasource with pathSource
         DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("dd-MM-yy_HH-mm-ss");
@@ -190,7 +190,9 @@ public class Controller {
         } catch (IOException e) {
             dao.updateStatus(connection, config.getId(), "ERROR");
         }
-        dao.updateStatus(connection, config.getId(), "TOOK");
+        dao.updateDetailFilePath(connection, config.getId(), pathSource);
+        config.setDetailPathFile(pathSource);
+        dao.updateStatus(connection, config.getId(), "CRAWLED");
         extractToStaging(connection, config);
     }
 
@@ -212,7 +214,7 @@ public class Controller {
             psLoadData.setString(1, config.getDetailPathFile());
             psLoadData.execute();
             dao.updateStatus(connection, config.getId(), "EXTRACTED");
-            transformData(connection, config);
+//            transformData(connection, config);
 
         } catch (SQLException e) {
             e.printStackTrace();

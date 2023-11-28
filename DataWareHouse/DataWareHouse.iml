@@ -11,5 +11,6 @@
     <orderEntry type="library" name="opencsv" level="project" />
     <orderEntry type="library" name="sun.mail.javax" level="project" />
     <orderEntry type="library" name="mysql.connector.java" level="project" />
+    <orderEntry type="library" name="bluecatcode.time.joda.2.9.1.extended" level="project" />
   </component>
 </module>

@@ -11,36 +11,26 @@ public class ForecastResultsDao {
     public static List<Config> getConfigs(Connection connection) {
         List<Config> configs = new ArrayList<>();
         //Câu select lấy list config muốn run
-        String query = "SELECT * FROM config WHERE flag = 1";
+        String query = "SELECT * FROM config WHERE flag = 1 ORDER BY update_at DESC";
         try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
 
             while (resultSet.next()) {
-                configs.add(new Config());
+                int id = resultSet.getInt("id");
+                String author = resultSet.getString("author");
+                String email = resultSet.getString("email");
+                String fileName = resultSet.getString("filename");
+                String directory = resultSet.getString("directory_file");
+                String status = resultSet.getString("status_config");
+                int flag = resultSet.getInt("flag");
+                String detailFilePath = resultSet.getString("detail_file_path");
+                Timestamp timestamp = resultSet.getTimestamp("update_at");
+                configs.add(new Config(id, author, email, fileName, directory, status, flag, timestamp, detailFilePath));
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return configs;
-    }
-
-    public static String getStatus(Connection connection, int id) {
-        String status = "";
-        //Lấy thuộc tính status có trong table config
-        String query = "SELECT `status` FROM config WHERE id_config=? LIMIT 1";
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, id);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    status = resultSet.getString("status");
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return status;
     }
 
     public static void updateStatus(Connection connection, int id, String status) {
@@ -52,4 +42,15 @@ public class ForecastResultsDao {
             throw new RuntimeException(e);
         }
     }
+
+    public static void updateDetailFilePath(Connection connection, int id, String detailFilePath) {
+        try (CallableStatement callableStatement = connection.prepareCall("{CALL UpdatePathFileDetail(?,?)}")) {
+            callableStatement.setInt(1, id);
+            callableStatement.setString(2, detailFilePath);
+            callableStatement.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

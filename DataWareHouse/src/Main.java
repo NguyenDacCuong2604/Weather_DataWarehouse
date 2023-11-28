@@ -17,16 +17,16 @@ public class Main {
             Controller controller = new Controller();
 
             for(Config config : configs){
-                String status = dao.getStatus(connection, config.getId());
+                String status = config.getStatus();
 
                 //nếu lỗi thì không cần thực hiện
                 if(status.equals("ERROR")){
                     continue;
                 }
                 //bước lấy dữ liệu từ API
-                else if(status.equals("TAKING")){
+                else if(status.equals("OFF")){
                     controller.getData(connection, config);
-                } else if (status.equals("EXTRACTING")) {
+                } else if (status.equals("CRAWLED")) {
                     controller.extractToStaging(connection, config);
                 } else if (status.equals("TRANSFORMING")) {
                     controller.transformData(connection, config);
@@ -35,6 +35,7 @@ public class Main {
                     controller.loadToWH(connection, config);
                 }
             }
+            db.closeConnection();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
