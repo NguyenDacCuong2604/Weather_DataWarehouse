@@ -170,7 +170,7 @@ public class Controller {
 
                         //Time now
                         LocalDateTime dtf = LocalDateTime.now();
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                         data.add(dtf.format(formatter));
 
                         //Write data from arraylist to CSV
@@ -207,14 +207,14 @@ public class Controller {
                 "    city_timezone, city_sunrise, city_sunset, dt, dt_txt, main_temp, main_feels_like, main_temp_min,\n" +
                 "    main_temp_max, main_pressure, main_sea_level, main_grnd_level, main_humidity, main_temp_kf, weather_id,\n" +
                 "    weather_main, weather_description, weather_icon, clouds_all, wind_speed, wind_deg, wind_gust, visibility,\n" +
-                "    pop, rain_3h, sys_pod, timeGet)";
+                "    pop, rain_3h, sys_pod, created_date)";
         try {
             //Load data to staging
             PreparedStatement psLoadData = connection.prepareStatement(sqlLoadData);
             psLoadData.setString(1, config.getDetailPathFile());
             psLoadData.execute();
             dao.updateStatus(connection, config.getId(), "EXTRACTED");
-//            transformData(connection, config);
+            transformData(connection, config);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -252,7 +252,7 @@ public class Controller {
             callableStatement.execute();
             dao.updateStatus(connection, config.getId(), "TRANSFORMED");
             System.out.println("transform success!");
-            loadToWH(connection, config);
+//            loadToWH(connection, config);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();

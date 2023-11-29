@@ -83,4 +83,24 @@ END;
 
 DELIMITER ;
 
+-- transform
+DROP PROCEDURE IF EXISTS TransformData;
+CREATE PROCEDURE TransformData()
+BEGIN
+		-- dim 
+    call staging.TransformDate();
+		call staging.TransformTime();
+		call staging.TransformCity();
+		call staging.TransformSun();
+		call staging.TransformMain();
+		call staging.TransformWeather();
+		call staging.TransformClouds();
+		call staging.TransformWind();
+		call staging.TransformVisibility();
+		call staging.TransformPop();
+		call staging.TransformRain();
+		call staging.TransformSys();
+		call staging.TransformCreatedDate();
+END;
+
 
