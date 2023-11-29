@@ -28,7 +28,7 @@ CREATE TABLE date_dim (
 
 TRUNCATE TABLE date_dim;
 -- load data ininfile
-LOAD DATA INFILE 'D:\\github\\Weather_DataWarehouse\\DataWareHouse\\date_dim_without_quarter.csv' INTO TABLE date_dim FIELDS TERMINATED BY ','
+LOAD DATA INFILE 'D:\\Github\\Weather_DataWarehouse\\DataWareHouse\\date_dim_without_quarter.csv' INTO TABLE date_dim FIELDS TERMINATED BY ','
 -- OPTIONALLY ENCLOSED BY '"' 
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
@@ -65,7 +65,7 @@ CREATE TABLE time_dim (
 );
 
 TRUNCATE TABLE time_dim;
-LOAD DATA INFILE 'D:\\github\\Weather_DataWarehouse\\DataWareHouse\\time_dim.csv' INTO TABLE time_dim FIELDS TERMINATED BY ','
+LOAD DATA INFILE 'D:\\Github\\Weather_DataWarehouse\\DataWareHouse\\time_dim.csv' INTO TABLE time_dim FIELDS TERMINATED BY ','
 -- OPTIONALLY ENCLOSED BY '"' 
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
@@ -88,6 +88,14 @@ create table city_dim(
 	city_country VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
 	city_population INT NULL DEFAULT 0,
 	city_timezone INT NULL DEFAULT 0,
+	dt_changed date NULL DEFAULT current_timestamp,
+  dt_expired date NULL DEFAULT NULL
+);
+
+-- sun 
+drop table if exists sun_dim;
+create table sun_dim(
+	id int primary key auto_increment,
 	city_sunset INT NULL DEFAULT 0,
 	city_sunrise INT NULL DEFAULT 0,
 	dt_changed date NULL DEFAULT current_timestamp,
@@ -184,6 +192,7 @@ drop table if exists fact;
 CREATE TABLE fact (
     id_fact INT PRIMARY KEY AUTO_INCREMENT,
     id_city INT,
+		id_sun INT,
     id_time INT,
 		id_date INT,
     id_main INT,
@@ -198,6 +207,7 @@ CREATE TABLE fact (
 		dtChanged int NULL DEFAULT current_timestamp,
 		dtExpired int NULL DEFAULT NULL,
     FOREIGN KEY (id_city) REFERENCES city_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+		FOREIGN KEY (id_sun) REFERENCES sun_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     FOREIGN KEY (id_time) REFERENCES time_dim(time_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
 		FOREIGN KEY (id_date) REFERENCES date_dim(date_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
     FOREIGN KEY (id_main) REFERENCES main_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -216,6 +226,11 @@ CREATE TABLE fact (
 -- city
 drop trigger if exists dt_expired_city;
 create trigger dt_expired_city before insert on city_dim for each row begin set NEW.dt_expired = "9999-12-31";
+end;
+
+-- sun 
+drop trigger if exists dt_expired_sun;
+create trigger dt_expired_sun before insert on sun_dim for each row begin set NEW.dt_expired = "9999-12-31";
 end;
 
 -- main

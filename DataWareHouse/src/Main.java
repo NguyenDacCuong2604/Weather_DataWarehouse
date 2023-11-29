@@ -15,7 +15,6 @@ public class Main {
         try (Connection connection = db.getConnection()) {
             List<Config> configs = dao.getConfigs(connection);
             Controller controller = new Controller();
-
             for(Config config : configs){
                 String status = config.getStatus();
 

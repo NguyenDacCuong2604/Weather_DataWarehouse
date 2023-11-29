@@ -73,7 +73,46 @@ BEGIN
 		SET staging._time = dim.time_sk;
 END;
 
-
+-- transform city 
+drop procedure if exists TransformCity;
+create procedure TransformCity()
+begin
+		create temporary table TempCity(
+			city_id VARCHAR(100)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+			city_name VARCHAR(100)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+			city_lat FLOAT,
+			city_lon FLOAT,
+			city_country_code VARCHAR(100)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+			city_population INT,
+			city_timezone INT
+		);
+		
+		INSERT into TempCity
+		select distinct city_id, city_name, city_latitude, city_longitude, city_country_code, city_population, city_timezone FROM staging;
+		
+		INSERT into warehouse.city_dim(city_id, city_name, city_lat, city_lon, city_country, city_population, city_timezone)
+		select city_id, city_name, city_lat, city_lon, city_country_code, city_population, city_timezone from TempCity
+		where not exists (
+			select 1 from warehouse.city_dim
+			where warehouse.city_dim.city_id = TempCity.city_id 
+			&& warehouse.city_dim.city_name = TempCity.city_name
+			&& warehouse.city_dim.city_lat = TempCity.city_lat 
+			&& warehouse.city_dim.city_lon = TempCity.city_lon
+			&& warehouse.city_dim.city_country = TempCity.city_country_code 
+			&& warehouse.city_dim.city_population = TempCity.city_population
+			&& warehouse.city_dim.city_timezone = TempCity.city_timezone
+		);
+		ALTER TABLE staging ADD COLUMN _city INT;
+		
+		update staging join warehouse.city_dim as dim on 
+		staging.city_id = dim.city_id &&
+		staging.city_name = dim.city_name
+		set staging._city = dim.id;
+		
+		drop TEMPORARY table TempCity;
+end;
+call TransformCity();
+	
 
 
 
