@@ -23,14 +23,14 @@ public class Main {
                     continue;
                 }
                 //bước lấy dữ liệu từ API
-                else if(status.equals("OFF")){
+                else if(status.equals("OFF") || status.equals("FINISHED")){
                     controller.getData(connection, config);
                 } else if (status.equals("CRAWLED")) {
                     controller.extractToStaging(connection, config);
-                } else if (status.equals("TRANSFORMING")) {
+                } else if (status.equals("EXTRACTED")) {
                     controller.transformData(connection, config);
                 }
-                else if (status.equals("WH_LOADING")){
+                else if (status.equals("TRANSFORMED")){
                     controller.loadToWH(connection, config);
                 }
             }

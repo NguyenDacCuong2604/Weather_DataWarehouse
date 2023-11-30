@@ -133,8 +133,8 @@ CREATE TABLE fact (
 		pop DOUBLE null default 0,
 		rain_3h DOUBLE null DEFAULT 0,
 		sys VARCHAR(1) NULL DEFAULT NULL,
-		dtChanged int NULL DEFAULT current_timestamp,
-		dtExpired int NULL DEFAULT NULL,
+		dtChanged Date NULL DEFAULT CURRENT_DATE,
+		dtExpired date NULL DEFAULT NULL,
     FOREIGN KEY (id_city) REFERENCES city_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     FOREIGN KEY (id_time) REFERENCES time_dim(time_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
 		FOREIGN KEY (id_date) REFERENCES date_dim(date_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -156,15 +156,15 @@ end;
 
 -- fact
 drop trigger if exists dt_expired_fact;
-create trigger dt_expired_fact before insert on fact for each row begin set NEW.dtExpired = 999999;
+create trigger dt_expired_fact before insert on fact for each row begin set NEW.dtExpired = "9999-12-31";
 end;
 
 
 
--- Aggregate
+-- Table Aggregate
 drop table if EXISTS forecast_results;
 create table forecast_results(
-	id int primary key auto_increment,
+	id int primary key not null,
 	date_forecast date null default null,
 	time_forecast time null default null,
 	city_name VARCHAR(100) null default null,

@@ -96,6 +96,7 @@ BEGIN
 END;
 
 
+
 -- load data to WH
 DROP PROCEDURE IF EXISTS LoadDataToWH;
 CREATE PROCEDURE `LoadDataToWH`()
@@ -128,19 +129,34 @@ BEGIN
 		FROM staging.staging;
 
 END;
-id_fact INT PRIMARY KEY AUTO_INCREMENT,
-	
-		main_pressure INT null default 0,
-		main_sea_level INT null DEFAULT 0,
-		main_grnd_level INT null DEFAULT 0,
-		main_humidity INT null default 0,
-		main_temp_kf DOUBLE null default 0,
-		clouds_all INT null default 0,
-		wind_speed DOUBLE null default 0,
-		wind_deg INT null default 0,
-		wind_gust DOUBLE null default 0,
-		visibility INT null default 0,
-		pop DOUBLE null default 0,
-		rain_3h DOUBLE null DEFAULT 0,
-		sys VARCHAR(1) NULL DEFAULT NULL,
+
+-- load data to aggregate 
+drop procedure if exists LoadDataToAggregate;
+create procedure LoadDataToAggregate()
+BEGIN
+	truncate table warehouse.forecast_results;
+	insert into warehouse.forecast_results(id, date_forecast, time_forecast, city_name, main_temp, main_pressure, main_humidity, clouds_all, wind_speed, visibility, rain_3h, weather_description, weather_icon)
+	select 
+		fact.id_fact, 
+		_date.full_date,
+		_time.full_time,
+		_city.city_name,
+		fact.main_temp,
+		fact.main_pressure,
+		fact.main_humidity,
+		fact.clouds_all,
+		fact.wind_speed,
+		fact.visibility,
+		fact.rain_3h,
+		_weather.weather_description,
+		_weather.weather_icon
+	from 
+		warehouse.fact as fact
+		join warehouse.date_dim as _date on fact.id_date = _date.date_sk
+		join warehouse.time_dim as _time on fact.id_time = _time.time_sk
+		join warehouse.city_dim as _city on fact.id_city = _city.id 
+		join warehouse.weather_dim as _weather on fact.id_weather = _weather.id
+	WHERE
+		cast(_date.full_date as date) >= CURRENT_DATE();
+END;
 
