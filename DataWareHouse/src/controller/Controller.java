@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.opencsv.CSVWriter;
 import dao.ForecastResultsDao;
+import database.DBConnection;
 import entity.Config;
 import util.SendMail;
 
@@ -190,6 +191,7 @@ public class Controller {
         } catch (IOException e) {
             dao.updateStatus(connection, config.getId(), "ERROR");
         }
+        System.out.println("CRAWLED success");
         dao.updateDetailFilePath(connection, config.getId(), pathSource);
         config.setDetailPathFile(pathSource);
         dao.updateStatus(connection, config.getId(), "CRAWLED");
@@ -213,6 +215,9 @@ public class Controller {
             PreparedStatement psLoadData = connection.prepareStatement(sqlLoadData);
             psLoadData.setString(1, config.getDetailPathFile());
             psLoadData.execute();
+
+            System.out.println("Load staging success");
+
             dao.updateStatus(connection, config.getId(), "EXTRACTED");
             transformData(connection, config);
 
@@ -250,9 +255,10 @@ public class Controller {
         try (CallableStatement callableStatement = connection.prepareCall("{CALL TransformData()}")) {
             // Thực hiện stored procedure
             callableStatement.execute();
+
             dao.updateStatus(connection, config.getId(), "TRANSFORMED");
             System.out.println("transform success!");
-//            loadToWH(connection, config);
+            loadToWH(connection, config);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
@@ -292,6 +298,17 @@ public class Controller {
             SendMail.sendMail(mail, subject, message);
         }
     }
+
+    public static void loadToAggregate(){
+        DBConnection db = new DBConnection();
+        try (Connection connection = db.getConnection()) {
+            CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToAggregate()}");
+            callableStatement.execute();
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
         /**
      * Converts a string containing city names into a list of strings.
      *
