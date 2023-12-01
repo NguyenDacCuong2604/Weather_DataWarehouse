@@ -77,7 +77,7 @@ DROP PROCEDURE IF EXISTS truncate_staging_table;
 DELIMITER //
 CREATE PROCEDURE truncate_staging_table()
 BEGIN
-    TRUNCATE staging.staging;
+    TRUNCATE table staging.staging;
 END;
 //
 
@@ -92,16 +92,15 @@ BEGIN
 		call staging.TransformTime();
 		call staging.TransformCity();
 		call staging.TransformWeather();
-		call staging.TransformCreatedDate();
 END;
 
 
 
 -- load data to WH
 DROP PROCEDURE IF EXISTS LoadDataToWH;
-CREATE PROCEDURE `LoadDataToWH`()
+CREATE PROCEDURE LoadDataToWH()
 BEGIN
-		
+		call warehouse.SetDataExpired();
 		INSERT INTO warehouse.fact (
 			id_city,
 			id_time,
@@ -124,10 +123,10 @@ BEGIN
 			visibility,
 			pop,
 			rain_3h,
-			sys)
-		SELECT staging._city, staging._time, staging._date, staging._weather, cast(city_sunset as int) , cast(city_sunrise as int), cast(main_temp as double), cast(main_feels_like as double), cast(main_temp_min as double), cast(main_temp_max as double), cast(main_pressure as int), cast(main_grnd_level as int), cast(main_humidity as int), cast(main_temp_kf as double), cast(clouds_all as int), cast(wind_speed as double), cast(wind_deg as int), cast(wind_gust as double), cast(visibility as int), cast(pop as double), cast(rain_3h as double), sys_pod
+			sys,
+			dtChanged)
+		SELECT staging._city, staging._time, staging._date, staging._weather, cast(city_sunset as int) , cast(city_sunrise as int), cast(main_temp as double), cast(main_feels_like as double), cast(main_temp_min as double), cast(main_temp_max as double), cast(main_pressure as int), cast(main_grnd_level as int), cast(main_humidity as int), cast(main_temp_kf as double), cast(clouds_all as int), cast(wind_speed as double), cast(wind_deg as int), cast(wind_gust as double), cast(visibility as int), cast(pop as double), cast(rain_3h as double), sys_pod, cast(created_date as datetime)
 		FROM staging.staging;
-
 END;
 
 -- load data to aggregate 
@@ -135,9 +134,10 @@ drop procedure if exists LoadDataToAggregate;
 create procedure LoadDataToAggregate()
 BEGIN
 	truncate table warehouse.forecast_results;
-	insert into warehouse.forecast_results(id, date_forecast, time_forecast, city_name, main_temp, main_pressure, main_humidity, clouds_all, wind_speed, visibility, rain_3h, weather_description, weather_icon)
+	insert into warehouse.forecast_results(id, date_of_week, date_forecast, time_forecast, city_name, main_temp, main_pressure, main_humidity, clouds_all, wind_speed, visibility, rain_3h, weather_description, weather_icon)
 	select 
-		fact.id_fact, 
+		fact.id_fact,
+		_date.day_of_week, 
 		_date.full_date,
 		_time.full_time,
 		_city.city_name,
@@ -157,6 +157,35 @@ BEGIN
 		join warehouse.city_dim as _city on fact.id_city = _city.id 
 		join warehouse.weather_dim as _weather on fact.id_weather = _weather.id
 	WHERE
-		cast(_date.full_date as date) >= CURRENT_DATE();
+		fact.dtExpired > now();
 END;
+
+-- swap name
+DROP PROCEDURE IF EXISTS SwapForecastTables;
+CREATE PROCEDURE SwapForecastTables()
+BEGIN
+    -- Tạo một bảng tạm thời để lưu trữ tên bảng cũ
+    CREATE TEMPORARY TABLE IF NOT EXISTS TempTableNames (
+        old_table_name VARCHAR(50),
+        new_table_name VARCHAR(50)
+    );
+
+    -- Đổi tên của các bảng trong datamart
+    RENAME TABLE datamart.forecast TO TempTableNames,
+                 datamart.forecast_temp TO datamart.forecast,
+                 TempTableNames TO datamart.forecast_temp;
+    -- Xóa bảng tạm thời
+    DROP TEMPORARY TABLE IF EXISTS TempTableNames;
+END;
+
+-- load table aggregate to datamart
+drop procedure if exists LoadToDM;
+create procedure LoadToDM()
+BEGIN
+	truncate table datamart.forecast_temp;
+	insert into datamart.forecast_temp(id, date_of_week, date_forecast, time_forecast, city_name, main_temp, main_pressure, main_humidity,
+	clouds_all, wind_speed, visibility, rain_3h, weather_description, weather_icon)
+	select * from warehouse.forecast_results;
+	call SwapForecastTables();
+end;
 

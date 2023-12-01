@@ -64,7 +64,8 @@ public class Controller {
         dao.updateStatus(connection, config.getId(), "CRAWLING");
 
         //Create file datasource with pathSource
-        DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("dd-MM-yy_HH-mm-ss");
+        DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        DateTimeFormatter dt_now = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
         String fileName = config.getFileName();
         String pathFileCsv = config.getPath();
@@ -73,7 +74,8 @@ public class Controller {
 
 
             CSVWriter writer = new CSVWriter(new FileWriter(pathSource));
-
+            //Time now
+            LocalDateTime dtf = LocalDateTime.now();
             // loop i (city)
             Iterator<String> iterator = cities.iterator();
 
@@ -169,19 +171,16 @@ public class Controller {
                         JsonObject sysData = forecast.getAsJsonObject("sys");
                         data.add(sysData.get("pod").getAsString());
 
-                        //Time now
-                        LocalDateTime dtf = LocalDateTime.now();
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                        data.add(dtf.format(formatter));
+                        data.add(dtf.format(dt_now));
 
                         //Write data from arraylist to CSV
                         writer.writeNext(data.toArray(new String[0]));
                     }
                 } else {
                     String mail = config.getEmail();
-                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+                    DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
                     LocalDateTime nowTime = LocalDateTime.now();
-                    String timeNow = nowTime.format(dtf);
+                    String timeNow = nowTime.format(dt);
                     String subject = "Error Date: " + timeNow;
                     String message = "Error getData with city: "+city;
                     SendMail.sendMail(mail, subject, message);
@@ -236,6 +235,7 @@ public class Controller {
 
     public static void truncateTable(Connection connection, Config config) {
         try (CallableStatement callableStatement = connection.prepareCall("{CALL truncate_staging_table()}")) {
+            callableStatement.execute();
         } catch (SQLException e) {
             e.printStackTrace();
             String mail = config.getEmail();

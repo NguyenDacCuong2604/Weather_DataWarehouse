@@ -11,10 +11,13 @@ import java.util.Properties;
 public class DBConnection {
     private static final String FILE_CONFIG = "\\config.properties";
     private static String urlDb;
+    private static String db;
+    private static String host;
+    private static String port;
+    private static String nameDB;
     private static String username;
     private static String password;
     private static Connection connection;
-
     static {
         Properties properties = new Properties();
         InputStream inputStream = null;
@@ -24,7 +27,13 @@ public class DBConnection {
             // load properties from file
             properties.load(inputStream);
             // get property by name
-            urlDb = properties.getProperty("url_controller");
+            db = properties.getProperty("db");
+            host = properties.getProperty("host");
+            port = properties.getProperty("port");
+            nameDB = properties.getProperty("name_database");
+
+            urlDb = "jdbc:"+db+"://"+host+":"+port+"/"+nameDB;
+
             username = properties.getProperty("username");
             password = properties.getProperty("password");
         } catch (IOException e) {

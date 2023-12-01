@@ -143,14 +143,6 @@ begin
 		drop TEMPORARY table TempWeather;
 end;
 
--- transform created date 
-drop procedure if exists TransformCreatedDate;
-create procedure TransformCreatedDate()
-begin
-	UPDATE staging
-    JOIN warehouse.date_dim AS dim ON staging.created_date = dim.full_date
-    SET staging.created_date = dim.date_sk;
-end;
 
 
 

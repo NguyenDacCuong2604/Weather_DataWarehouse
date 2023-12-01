@@ -90,8 +90,8 @@ create table city_dim(
 	city_country VARCHAR(100) NULL DEFAULT NULL,
 	city_population INT NULL DEFAULT 0,
 	city_timezone INT NULL DEFAULT 0,
-	dt_changed date NULL DEFAULT current_timestamp,
-  dt_expired date NULL DEFAULT NULL
+	dt_changed datetime NULL DEFAULT CURRENT_TIMESTAMP,
+  dt_expired datetime NULL DEFAULT NULL
 );
 
 -- weather
@@ -102,8 +102,8 @@ create table weather_dim(
 	weather_main VARCHAR(100) NULL DEFAULT NULL,
 	weather_description VARCHAR(100) NULL DEFAULT NULL,
 	weather_icon VARCHAR(100) NULL DEFAULT NULL,
-	dt_changed date NULL DEFAULT current_timestamp,
-  dt_expired date NULL DEFAULT NULL
+	dt_changed datetime NULL DEFAULT current_timestamp,
+  dt_expired datetime NULL DEFAULT NULL
 );
 
 -- fact
@@ -133,8 +133,8 @@ CREATE TABLE fact (
 		pop DOUBLE null default 0,
 		rain_3h DOUBLE null DEFAULT 0,
 		sys VARCHAR(1) NULL DEFAULT NULL,
-		dtChanged Date NULL DEFAULT CURRENT_DATE,
-		dtExpired date NULL DEFAULT NULL,
+		dtChanged Datetime NULL DEFAULT CURRENT_TIME,
+		dtExpired datetime NULL DEFAULT NULL,
     FOREIGN KEY (id_city) REFERENCES city_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
     FOREIGN KEY (id_time) REFERENCES time_dim(time_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
 		FOREIGN KEY (id_date) REFERENCES date_dim(date_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
@@ -146,25 +146,34 @@ CREATE TABLE fact (
 
 -- city
 drop trigger if exists dt_expired_city;
-create trigger dt_expired_city before insert on city_dim for each row begin set NEW.dt_expired = "9999-12-31";
+create trigger dt_expired_city before insert on city_dim for each row begin set NEW.dt_expired = "9999-12-31 23:59:59";
 end;
 
 -- weather
 drop trigger if exists dt_expired_weather;
-create trigger dt_expired_weather before insert on weather_dim for each row begin set NEW.dt_expired = "9999-12-31";
+create trigger dt_expired_weather before insert on weather_dim for each row begin set NEW.dt_expired = "9999-12-31 23:59:59";
 end;
 
 -- fact
 drop trigger if exists dt_expired_fact;
-create trigger dt_expired_fact before insert on fact for each row begin set NEW.dtExpired = "9999-12-31";
+create trigger dt_expired_fact before insert on fact for each row begin set NEW.dtExpired = "9999-12-31 23:59:59";
 end;
 
+
+drop procedure if exists SetDataExpired;
+create procedure SetDataExpired()
+BEGIN
+	UPDATE fact
+    SET dtExpired = CURRENT_TIMESTAMP
+    WHERE isDelete = b'0';
+end;
 
 
 -- Table Aggregate
 drop table if EXISTS forecast_results;
 create table forecast_results(
 	id int primary key not null,
+	date_of_week varchar(20) null default null,
 	date_forecast date null default null,
 	time_forecast time null default null,
 	city_name VARCHAR(100) null default null,
