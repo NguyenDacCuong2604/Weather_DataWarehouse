@@ -180,6 +180,7 @@ public class Controller {
                         writer.writeNext(data.toArray(new String[0]));
                     }
                 } else {
+                    dao.insertLog(connection, config.getId(), "ERROR", "Error get Data with city: "+ city);
                     String mail = config.getEmail();
                     DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
                     LocalDateTime nowTime = LocalDateTime.now();
@@ -192,6 +193,7 @@ public class Controller {
             writer.close();
         } catch (IOException e) {
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -216,8 +218,10 @@ public class Controller {
     public static void extractToStaging(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
         dao.updateStatus(connection, config.getId(), "EXTRACTING");
+        dao.insertLog(connection, config.getId(), "EXTRACTING", "Start extract data");
         //truncate table
         truncateTable(connection, config);
+        dao.insertLog(connection, config.getId(), "EXTRACTING", "Truncate table staging");
         //load data to staging
         String sqlLoadData = "LOAD DATA INFILE ? INTO TABLE staging.staging FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n' IGNORE 0 LINES (\n" +
                 "    cod, message, cnt, city_id, city_name, city_latitude, city_longitude, city_country_code, city_population,\n" +
@@ -229,16 +233,17 @@ public class Controller {
             //Load data to staging
             PreparedStatement psLoadData = connection.prepareStatement(sqlLoadData);
             psLoadData.setString(1, config.getDetailPathFile());
+            dao.insertLog(connection, config.getId(), "EXTRACTING", "Load data to staging");
             psLoadData.execute();
-
             System.out.println("Load staging success");
-
             dao.updateStatus(connection, config.getId(), "EXTRACTED");
+            dao.insertLog(connection, config.getId(), "EXTRACTED", "Load data success");
             transformData(connection, config);
 
         } catch (SQLException e) {
             e.printStackTrace();
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -277,18 +282,20 @@ public class Controller {
     public static void transformData(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
         dao.updateStatus(connection, config.getId(), "TRANSFORMING");
-
+        dao.insertLog(connection, config.getId(), "TRANSFORMING", "Start transform");
         try (CallableStatement callableStatement = connection.prepareCall("{CALL TransformData()}")) {
             // Thực hiện stored procedure
             callableStatement.execute();
 
             dao.updateStatus(connection, config.getId(), "TRANSFORMED");
+            dao.insertLog(connection, config.getId(), "TRANSFORMED", "Transform success");
             System.out.println("transform success!");
             loadToWH(connection, config);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -307,32 +314,20 @@ public class Controller {
     public static void loadToWH(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
         dao.updateStatus(connection, config.getId(), "WH_LOADING");
-
+        dao.insertLog(connection, config.getId(), "WH_LOADING", "Start load data to Warehouse");
         try (CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToWH()}")) {
             // Thực hiện stored procedure
             callableStatement.execute();
 
             dao.updateStatus(connection, config.getId(), "WH_LOADED");
-            //finish
-            dao.updateStatus(connection, config.getId(), "FINISHED");
-            dao.setFlagIsZero(connection, config.getId());
+            dao.insertLog(connection, config.getId(), "WH_LOADED", "Load to warehouse success");
             System.out.println("load to warehouse success!");
-            //send mail khi đã hoàn thành việc lấy data load vào warehouse
-            String mail = config.getEmail();
-            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
-            LocalDateTime nowTime = LocalDateTime.now();
-            String timeNow = nowTime.format(dt);
-            String subject = "Success DataWarehouse Date: " + timeNow;
-            String message = "Success";
-            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
-            if(pathLogs!=null){
-                SendMail.sendMail(mail, subject, message, pathLogs);
-            }
-            else SendMail.sendMail(mail, subject, message);
+            loadToAggregate(connection, config);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
             //send mail
             String mail = config.getEmail();
@@ -349,13 +344,78 @@ public class Controller {
         }
     }
 
-    public static void loadToAggregate(){
-        DBConnection db = new DBConnection();
-        try (Connection connection = db.getConnection()) {
-            CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToAggregate()}");
+    public static void loadToAggregate(Connection connection, Config config){
+        ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateStatus(connection, config.getId(), "AGGREGATING");
+        dao.insertLog(connection, config.getId(), "AGGREGATING", "Start aggregate");
+        try(CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToAggregate()}")){
             callableStatement.execute();
+            dao.updateStatus(connection, config.getId(),"AGGREGATED");
+            dao.insertLog(connection, config.getId(), "AGGREGATED", "Load aggregate success");
+            System.out.println("aggregate success!");
+            loadToDataMart(connection, config);
         }catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            dao.setFlagIsZero(connection, config.getId());
+            //send mail
+            String mail = config.getEmail();
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            LocalDateTime nowTime = LocalDateTime.now();
+            String timeNow = nowTime.format(dt);
+            String subject = "Error Date: " + timeNow;
+            String message = "Error with message: "+e.getMessage();
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
+        }
+    }
+
+    public static void loadToDataMart(Connection connection, Config config){
+        ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateStatus(connection, config.getId(), "MLOADING");
+        dao.insertLog(connection, config.getId(), "MLOADING", "Start load data to DataMart");
+        try(CallableStatement callableStatement = connection.prepareCall("{CALL LoadToDM()}")){
+           callableStatement.execute();
+            dao.updateStatus(connection, config.getId(), "MLOADED");
+            dao.insertLog(connection, config.getId(), "MLOADED", "Load to mart success");
+            System.out.println("load to mart success!");
+            //finish
+            dao.updateStatus(connection, config.getId(), "FINISHED");
+            dao.insertLog(connection, config.getId(), "FINISHED", "Finished!");
+            dao.setFlagIsZero(connection, config.getId());
+            //send mail khi đã hoàn thành việc lấy data load vào warehouse
+            String mail = config.getEmail();
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            LocalDateTime nowTime = LocalDateTime.now();
+            String timeNow = nowTime.format(dt);
+            String subject = "Success DataWarehouse Date: " + timeNow;
+            String message = "Success";
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
+        }catch (SQLException e){
+            e.printStackTrace();
+            dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            dao.setFlagIsZero(connection, config.getId());
+            //send mail
+            String mail = config.getEmail();
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            LocalDateTime nowTime = LocalDateTime.now();
+            String timeNow = nowTime.format(dt);
+            String subject = "Error Date: " + timeNow;
+            String message = "Error with message: "+e.getMessage();
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         }
     }
 

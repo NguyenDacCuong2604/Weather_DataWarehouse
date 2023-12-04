@@ -207,7 +207,7 @@ end;
 -- log
 drop table if exists log;
 create table log(
-		id int primary key not null,
+		id int primary key auto_increment,
 		id_config int ,
 		status varchar(100) null default null,
 		description varchar(255) null default null,

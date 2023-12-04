@@ -33,6 +33,12 @@ public class Main {
                 else if (status.equals("TRANSFORMED")){
                     controller.loadToWH(connection, config);
                 }
+                else if (status.equals("WH_LOADED")){
+                    controller.loadToAggregate(connection, config);
+                }
+                else if (status.equals("AGGREGATED")){
+                    controller.loadToDataMart(connection, config);
+                }
             }
             db.closeConnection();
         } catch (SQLException e) {

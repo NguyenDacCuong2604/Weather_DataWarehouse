@@ -76,7 +76,7 @@ public class ForecastResultsDao {
     public static List<String> getLogs(Connection connection, int idConfig) {
         List<String> logs = new ArrayList<>();
         //Câu select lấy list config muốn run
-        String query = "SELECT * FROM log WHERE id_config = ? ORDER BY created_at DESC";
+        String query = "SELECT * FROM log WHERE id_config = ? ORDER BY created_at ASC";
         try {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, idConfig);
