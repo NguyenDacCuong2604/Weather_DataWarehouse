@@ -72,6 +72,21 @@ END;
 
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS SetFlagIsZero;
+-- update Path File Detail
+DELIMITER //
+CREATE PROCEDURE SetFlagIsZero(
+    IN input_id INT
+)
+BEGIN
+    UPDATE config
+		SET flag = 0
+    WHERE id = input_id;
+END;
+//
+
+DELIMITER ;
+
 DROP PROCEDURE IF EXISTS truncate_staging_table;
 -- update Path File Detail
 DELIMITER //
@@ -189,3 +204,24 @@ BEGIN
 	call SwapForecastTables();
 end;
 
+-- log
+drop table if exists log;
+create table log(
+		id int primary key not null,
+		id_config int ,
+		status varchar(100) null default null,
+		description varchar(255) null default null,
+		created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (id_config) REFERENCES config(id) ON DELETE RESTRICT ON UPDATE RESTRICT);
+
+-- create procedure insert log
+drop procedure if EXISTS InsertLog;
+create procedure InsertLog(
+	id_config int,
+	status varchar(100),
+	description varchar(255)
+)
+BEGIN
+	insert into log(id_config, status, description)
+	values (id_config, status, description);
+end;

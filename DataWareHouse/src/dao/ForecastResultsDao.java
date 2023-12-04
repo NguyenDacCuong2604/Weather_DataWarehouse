@@ -53,4 +53,48 @@ public class ForecastResultsDao {
         }
     }
 
+    public static void setFlagIsZero(Connection connection, int id){
+        try (CallableStatement callableStatement = connection.prepareCall("{CALL SetFlagIsZero(?)}")) {
+            callableStatement.setInt(1, id);
+            callableStatement.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void insertLog(Connection connection, int idConfig, String status, String description){
+        try (CallableStatement callableStatement = connection.prepareCall("{Call InsertLog(?,?,?)}")){
+            callableStatement.setInt(1, idConfig);
+            callableStatement.setString(2, status);
+            callableStatement.setString(3, description);
+            callableStatement.execute();
+        } catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<String> getLogs(Connection connection, int idConfig) {
+        List<String> logs = new ArrayList<>();
+        //Câu select lấy list config muốn run
+        String query = "SELECT * FROM log WHERE id_config = ? ORDER BY created_at DESC";
+        try {
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, idConfig);
+            ResultSet resultSet = statement.executeQuery();
+            int i = 1;
+            while (resultSet.next()){
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append(i+++". ");
+                stringBuilder.append("ID Config: "+resultSet.getInt("id_config"));
+                stringBuilder.append(". Status: "+resultSet.getString("status"));
+                stringBuilder.append(". Description: "+resultSet.getString("description"));
+                stringBuilder.append("Time: "+resultSet.getTimestamp("created_at").toString());
+                logs.add(stringBuilder.toString());
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return logs;
+    }
+
 }

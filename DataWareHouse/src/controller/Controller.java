@@ -23,6 +23,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static util.CreateFileLog.createFIleLog;
+
 public class Controller {
     // Configuration file path
     private static final String FILE_CONFIG = "\\config.properties";
@@ -62,6 +64,7 @@ public class Controller {
     public void getData(Connection connection, Config config) {
         ForecastResultsDao dao = new ForecastResultsDao();
         dao.updateStatus(connection, config.getId(), "CRAWLING");
+        dao.insertLog(connection, config.getId(), "CRAWLING", "Start crawl data");
 
         //Create file datasource with pathSource
         DateTimeFormatter dtf_file = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -189,11 +192,24 @@ public class Controller {
             writer.close();
         } catch (IOException e) {
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.setFlagIsZero(connection, config.getId());
+            String mail = config.getEmail();
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            LocalDateTime nowTime = LocalDateTime.now();
+            String timeNow = nowTime.format(dt);
+            String subject = "Error Date: " + timeNow;
+            String message = "Error with message: "+e.getMessage();
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         }
         System.out.println("CRAWLED success");
         dao.updateDetailFilePath(connection, config.getId(), pathSource);
         config.setDetailPathFile(pathSource);
         dao.updateStatus(connection, config.getId(), "CRAWLED");
+        dao.insertLog(connection, config.getId(), "CRAWLED", "End crawl, data to "+pathSource);
         extractToStaging(connection, config);
     }
 
@@ -223,13 +239,18 @@ public class Controller {
         } catch (SQLException e) {
             e.printStackTrace();
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.setFlagIsZero(connection, config.getId());
             String mail = config.getEmail();
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
-            String timeNow = nowTime.format(dtf);
+            String timeNow = nowTime.format(dt);
             String subject = "Error Date: " + timeNow;
             String message = "Error with message: "+e.getMessage();
-            SendMail.sendMail(mail, subject, message);
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         }
     }
 
@@ -238,13 +259,18 @@ public class Controller {
             callableStatement.execute();
         } catch (SQLException e) {
             e.printStackTrace();
+            ForecastResultsDao dao = new ForecastResultsDao();
             String mail = config.getEmail();
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
-            String timeNow = nowTime.format(dtf);
+            String timeNow = nowTime.format(dt);
             String subject = "Error Date: " + timeNow;
             String message = "Error with message: "+e.getMessage();
-            SendMail.sendMail(mail, subject, message);
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         }
     }
 
@@ -263,13 +289,18 @@ public class Controller {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.setFlagIsZero(connection, config.getId());
             String mail = config.getEmail();
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
-            String timeNow = nowTime.format(dtf);
+            String timeNow = nowTime.format(dt);
             String subject = "Error Date: " + timeNow;
             String message = "Error with message: "+e.getMessage();
-            SendMail.sendMail(mail, subject, message);
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         }
     }
 
@@ -282,20 +313,39 @@ public class Controller {
             callableStatement.execute();
 
             dao.updateStatus(connection, config.getId(), "WH_LOADED");
+            //finish
             dao.updateStatus(connection, config.getId(), "FINISHED");
+            dao.setFlagIsZero(connection, config.getId());
             System.out.println("load to warehouse success!");
+            //send mail khi đã hoàn thành việc lấy data load vào warehouse
+            String mail = config.getEmail();
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            LocalDateTime nowTime = LocalDateTime.now();
+            String timeNow = nowTime.format(dt);
+            String subject = "Success DataWarehouse Date: " + timeNow;
+            String message = "Success";
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
             dao.updateStatus(connection, config.getId(), "ERROR");
+            dao.setFlagIsZero(connection, config.getId());
             //send mail
             String mail = config.getEmail();
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
+            DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
-            String timeNow = nowTime.format(dtf);
+            String timeNow = nowTime.format(dt);
             String subject = "Error Date: " + timeNow;
             String message = "Error with message: "+e.getMessage();
-            SendMail.sendMail(mail, subject, message);
+            String pathLogs = createFIleLog(dao.getLogs(connection, config.getId()));
+            if(pathLogs!=null){
+                SendMail.sendMail(mail, subject, message, pathLogs);
+            }
+            else SendMail.sendMail(mail, subject, message);
         }
     }
 

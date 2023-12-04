@@ -76,6 +76,13 @@
             bottom: 0;
             width: 100%;
         }
+        #selectedCity {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+        }
     </style>
     <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
@@ -123,12 +130,12 @@
         <td><%= item.getTimeForecast()%></td>
         <td><%= item.getDateForecast()%></td>
         <td><%=  item.getMainTemp() %>°C</td>
-        <td><%=  item.getMainPressure() %></td>
-        <td><%=  item.getMainHumidity() %></td>
-        <td><%=  item.getCloudsAll() %></td>
-        <td><%=  item.getWindSpeed() %></td>
-        <td><%=  item.getVisibility() %></td>
-        <td><%=  item.getRain3h() %></td>
+        <td><%=  item.getMainPressure() %>hPa</td>
+        <td><%=  item.getMainHumidity() %>%</td>
+        <td><%=  item.getCloudsAll() %>%</td>
+        <td><%=  item.getWindSpeed() %>miles/hour</td>
+        <td><%=  item.getVisibility() %>m</td>
+        <td><%=  item.getRain3h() %>mm</td>
         <td><%=  item.getWeatherDescription() %></td>
         <td><img src="image/w<%= item.getWeatherIcon()%>.png" /></td>
     </tr>
