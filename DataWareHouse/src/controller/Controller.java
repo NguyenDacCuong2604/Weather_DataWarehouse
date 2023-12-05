@@ -63,6 +63,7 @@ public class Controller {
 
     public void getData(Connection connection, Config config) {
         ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "CRAWLING");
         dao.insertLog(connection, config.getId(), "CRAWLING", "Start crawl data");
 
@@ -195,6 +196,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "ERROR");
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
@@ -217,6 +219,7 @@ public class Controller {
 
     public static void extractToStaging(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "EXTRACTING");
         dao.insertLog(connection, config.getId(), "EXTRACTING", "Start extract data");
         //truncate table
@@ -245,6 +248,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "ERROR");
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
@@ -260,11 +264,13 @@ public class Controller {
     }
 
     public static void truncateTable(Connection connection, Config config) {
+        ForecastResultsDao dao = new ForecastResultsDao();
         try (CallableStatement callableStatement = connection.prepareCall("{CALL truncate_staging_table()}")) {
             callableStatement.execute();
+            dao.insertLog(connection, config.getId(), "EXTRACTING", "Truncate success");
         } catch (SQLException e) {
             e.printStackTrace();
-            ForecastResultsDao dao = new ForecastResultsDao();
+            dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
@@ -281,6 +287,7 @@ public class Controller {
 
     public static void transformData(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "TRANSFORMING");
         dao.insertLog(connection, config.getId(), "TRANSFORMING", "Start transform");
         try (CallableStatement callableStatement = connection.prepareCall("{CALL TransformData()}")) {
@@ -297,6 +304,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "ERROR");
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
@@ -313,6 +321,7 @@ public class Controller {
 
     public static void loadToWH(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "WH_LOADING");
         dao.insertLog(connection, config.getId(), "WH_LOADING", "Start load data to Warehouse");
         try (CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToWH()}")) {
@@ -329,6 +338,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "ERROR");
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             //send mail
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -346,6 +356,7 @@ public class Controller {
 
     public static void loadToAggregate(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "AGGREGATING");
         dao.insertLog(connection, config.getId(), "AGGREGATING", "Start aggregate");
         try(CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToAggregate()}")){
@@ -359,6 +370,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "ERROR");
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             //send mail
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -376,6 +388,7 @@ public class Controller {
 
     public static void loadToDataMart(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "MLOADING");
         dao.insertLog(connection, config.getId(), "MLOADING", "Start load data to DataMart");
         try(CallableStatement callableStatement = connection.prepareCall("{CALL LoadToDM()}")){
@@ -387,6 +400,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "FINISHED");
             dao.insertLog(connection, config.getId(), "FINISHED", "Finished!");
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             //send mail khi đã hoàn thành việc lấy data load vào warehouse
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -404,6 +418,7 @@ public class Controller {
             dao.updateStatus(connection, config.getId(), "ERROR");
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
             dao.setFlagIsZero(connection, config.getId());
+            dao.updateIsProcessing(connection, config.getId(), false);
             //send mail
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");

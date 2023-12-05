@@ -15,33 +15,39 @@ public class Main {
         try (Connection connection = db.getConnection()) {
             List<Config> configs = dao.getConfigs(connection);
             Controller controller = new Controller();
-            for(Config config : configs){
-                String status = config.getStatus();
+            for (Config config : configs) {
 
-                //nếu lỗi thì không cần thực hiện
-                if(status.equals("ERROR")){
-                    continue;
+                int maxWait = 0;
+                while (dao.getProcessingCount(connection) != 0 && maxWait <= 3) {
+                    System.out.println("Wait...");
+                    maxWait++;
+                    Thread.sleep(60000); //60s
                 }
-                //bước lấy dữ liệu từ API
-                else if(status.equals("OFF") || status.equals("FINISHED")){
-                    controller.getData(connection, config);
-                } else if (status.equals("CRAWLED")) {
-                    controller.extractToStaging(connection, config);
-                } else if (status.equals("EXTRACTED")) {
-                    controller.transformData(connection, config);
-                }
-                else if (status.equals("TRANSFORMED")){
-                    controller.loadToWH(connection, config);
-                }
-                else if (status.equals("WH_LOADED")){
-                    controller.loadToAggregate(connection, config);
-                }
-                else if (status.equals("AGGREGATED")){
-                    controller.loadToDataMart(connection, config);
+                if (dao.getProcessingCount(connection) == 0) {
+                    System.out.println("Start");
+                    String status = config.getStatus();
+                    //nếu lỗi thì không cần thực hiện
+                    if (status.equals("ERROR")) {
+                        continue;
+                    }
+                    //bước lấy dữ liệu từ API
+                    else if (status.equals("OFF") || status.equals("FINISHED")) {
+                        controller.getData(connection, config);
+                    } else if (status.equals("CRAWLED")) {
+                        controller.extractToStaging(connection, config);
+                    } else if (status.equals("EXTRACTED")) {
+                        controller.transformData(connection, config);
+                    } else if (status.equals("TRANSFORMED")) {
+                        controller.loadToWH(connection, config);
+                    } else if (status.equals("WH_LOADED")) {
+                        controller.loadToAggregate(connection, config);
+                    } else if (status.equals("AGGREGATED")) {
+                        controller.loadToDataMart(connection, config);
+                    }
                 }
             }
             db.closeConnection();
-        } catch (SQLException e) {
+        } catch (SQLException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

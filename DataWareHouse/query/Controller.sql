@@ -18,7 +18,8 @@ CREATE TABLE config(
 	flag bit(1) NULL DEFAULT 0,
 	finish_at DATETIME NULL DEFAULT NULL,
 	created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
-	update_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP
+	update_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+	is_processing bit(1) null default 0
 );
 
 DROP TRIGGER IF EXISTS update_update_at_trigger;
@@ -66,6 +67,22 @@ CREATE PROCEDURE UpdatePathFileDetail(
 BEGIN
     UPDATE config
 		SET detail_file_path = input_pathfile
+    WHERE id = input_id;
+END;
+//
+
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS UpdateIsProcessing;
+-- update Path File Detail
+DELIMITER //
+CREATE PROCEDURE UpdateIsProcessing(
+    IN input_id INT,
+    IN input_is_processing bit(1)
+)
+BEGIN
+    UPDATE config
+		SET is_processing = input_is_processing
     WHERE id = input_id;
 END;
 //
