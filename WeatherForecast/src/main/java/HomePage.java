@@ -63,8 +63,23 @@ public class HomePage extends HttpServlet {
                 statement.setString(1, city);
                 ResultSet resultSet = statement.executeQuery();
                 while (resultSet.next()) {
-                    // Reading data from ResultSet and adding it to the list
-                    // ... (remaining code as previously provided)
+                    // Đọc dữ liệu từ ResultSet và thêm vào danh sách
+                    int id = resultSet.getInt("id");
+                    String dataOfWeek = resultSet.getString("date_of_week");
+                    Date dateForecast = resultSet.getDate("date_forecast");
+                    Time timeForecast = resultSet.getTime("time_forecast");
+                    String cityName = resultSet.getString("city_name");
+                    double mainTemp = resultSet.getDouble("main_temp");
+                    int mainPressure = resultSet.getInt("main_pressure");
+                    int mainHumidity = resultSet.getInt("main_humidity");
+                    int cloudsAll = resultSet.getInt("clouds_all");
+                    double windSpeed = resultSet.getDouble("wind_speed");
+                    int visibility = resultSet.getInt("visibility");
+                    int rain3h = resultSet.getInt("rain_3h");
+                    String weatherDescription = resultSet.getString("weather_description").toUpperCase();
+                    String weatherIcon = resultSet.getString("weather_icon");
+                    DataItem item = new DataItem(id, dataOfWeek, dateForecast, timeForecast, cityName, mainTemp, mainPressure, mainHumidity, cloudsAll, windSpeed, visibility, rain3h, weatherDescription, weatherIcon);
+                    dataList.add(item);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
