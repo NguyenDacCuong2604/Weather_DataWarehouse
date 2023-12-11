@@ -12,7 +12,9 @@ public class Main {
     public static void main(String[] args) {
         DBConnection db = new DBConnection();
         ForecastResultsDao dao = new ForecastResultsDao();
+        //3. Kết nối với với database Controller
         try (Connection connection = db.getConnection()) {
+            //4. Lấy danh sách config trong table config có flag = 1
             List<Config> configs = dao.getConfigs(connection);
             Controller controller = new Controller();
             for (Config config : configs) {

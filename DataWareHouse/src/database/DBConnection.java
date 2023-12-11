@@ -19,6 +19,7 @@ public class DBConnection {
     private static String password;
     private static Connection connection;
     static {
+        // 2. Lấy các thuộc tính của database trong file config.properties
         Properties properties = new Properties();
         InputStream inputStream = null;
         try {
@@ -27,19 +28,19 @@ public class DBConnection {
             // load properties from file
             properties.load(inputStream);
             // get property by name
-            db = properties.getProperty("db");
-            host = properties.getProperty("host");
-            port = properties.getProperty("port");
-            nameDB = properties.getProperty("name_database");
+            db = properties.getProperty("db"); //tên hệ quản trị cơ sở dữ liệu
+            host = properties.getProperty("host"); // host dể kết nối CSDL
+            port = properties.getProperty("port"); // port để kết nối với CSDL
+            nameDB = properties.getProperty("name_database"); // tên database muốn kết nối
 
             urlDb = "jdbc:"+db+"://"+host+":"+port+"/"+nameDB;
 
-            username = properties.getProperty("username");
-            password = properties.getProperty("password");
+            username = properties.getProperty("username"); // tên đăng nhập để kết nối với db
+            password = properties.getProperty("password"); // password để dăng nhập
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            // close objects
+            // close objects - khi lấy xong các giá trị thuộc tính thì đóng kết nối input stream
             try {
                 if (inputStream != null) {
                     inputStream.close();
@@ -54,6 +55,7 @@ public class DBConnection {
 
     }
 
+    //Kết nối với database
     public static Connection getConnection(){
         if (connection == null) {
             try {
@@ -61,7 +63,6 @@ public class DBConnection {
                 Class.forName("com.mysql.cj.jdbc.Driver");
                 connection = DriverManager.getConnection(urlDb, username, password);
             } catch (SQLException e) {
-                e.printStackTrace();
                 throw new RuntimeException(e.getMessage());
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
@@ -70,6 +71,7 @@ public class DBConnection {
         return connection;
     }
 
+    //Đóng kết nối
     public static void closeConnection(){
         if (connection != null) {
             try {

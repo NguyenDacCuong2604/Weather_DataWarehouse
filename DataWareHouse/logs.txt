@@ -1,16 +1,32 @@
-1. ID Config: 2. Status: CRAWLING. Description: Start crawl dataTime: 2023-12-05 11:21:20.0
-2. ID Config: 2. Status: CRAWLED. Description: End crawl, data to D:\\Test2023-12-05_11-21-20.csvTime: 2023-12-05 11:21:32.0
-3. ID Config: 2. Status: EXTRACTING. Description: Start extract dataTime: 2023-12-05 11:21:32.0
-4. ID Config: 2. Status: EXTRACTING. Description: Truncate successTime: 2023-12-05 11:21:32.0
-5. ID Config: 2. Status: EXTRACTING. Description: Truncate table stagingTime: 2023-12-05 11:21:32.0
-6. ID Config: 2. Status: EXTRACTING. Description: Load data to stagingTime: 2023-12-05 11:21:32.0
-7. ID Config: 2. Status: EXTRACTED. Description: Load data successTime: 2023-12-05 11:21:33.0
-8. ID Config: 2. Status: TRANSFORMING. Description: Start transformTime: 2023-12-05 11:21:33.0
-9. ID Config: 2. Status: TRANSFORMED. Description: Transform successTime: 2023-12-05 11:21:55.0
-10. ID Config: 2. Status: WH_LOADING. Description: Start load data to WarehouseTime: 2023-12-05 11:21:55.0
-11. ID Config: 2. Status: WH_LOADED. Description: Load to warehouse successTime: 2023-12-05 11:21:56.0
-12. ID Config: 2. Status: AGGREGATING. Description: Start aggregateTime: 2023-12-05 11:21:56.0
-13. ID Config: 2. Status: AGGREGATED. Description: Load aggregate successTime: 2023-12-05 11:21:56.0
-14. ID Config: 2. Status: MLOADING. Description: Start load data to DataMartTime: 2023-12-05 11:21:56.0
-15. ID Config: 2. Status: MLOADED. Description: Load to mart successTime: 2023-12-05 11:21:57.0
-16. ID Config: 2. Status: FINISHED. Description: Finished!Time: 2023-12-05 11:21:57.0
+1. ID Config: 1. Status: CRAWLING. Description: Start crawl dataTime: 2023-12-10 09:22:27.0
+2. ID Config: 1. Status: CRAWLED. Description: End crawl, data to D:\\Demo2023-12-10_09-22-27.csvTime: 2023-12-10 09:22:37.0
+3. ID Config: 1. Status: EXTRACTING. Description: Start extract dataTime: 2023-12-10 09:22:37.0
+4. ID Config: 1. Status: EXTRACTING. Description: Truncate successTime: 2023-12-10 09:22:37.0
+5. ID Config: 1. Status: EXTRACTING. Description: Truncate table stagingTime: 2023-12-10 09:22:37.0
+6. ID Config: 1. Status: EXTRACTING. Description: Load data to stagingTime: 2023-12-10 09:22:37.0
+7. ID Config: 1. Status: EXTRACTED. Description: Load data successTime: 2023-12-10 09:22:38.0
+8. ID Config: 1. Status: TRANSFORMING. Description: Start transformTime: 2023-12-10 09:22:38.0
+9. ID Config: 1. Status: TRANSFORMED. Description: Transform successTime: 2023-12-10 09:23:02.0
+10. ID Config: 1. Status: WH_LOADING. Description: Start load data to WarehouseTime: 2023-12-10 09:23:03.0
+11. ID Config: 1. Status: WH_LOADED. Description: Load to warehouse successTime: 2023-12-10 09:23:04.0
+12. ID Config: 1. Status: AGGREGATING. Description: Start aggregateTime: 2023-12-10 09:23:04.0
+13. ID Config: 1. Status: AGGREGATED. Description: Load aggregate successTime: 2023-12-10 09:23:05.0
+14. ID Config: 1. Status: MLOADING. Description: Start load data to DataMartTime: 2023-12-10 09:23:05.0
+15. ID Config: 1. Status: MLOADED. Description: Load to mart successTime: 2023-12-10 09:23:06.0
+16. ID Config: 1. Status: FINISHED. Description: Finished!Time: 2023-12-10 09:23:06.0
+17. ID Config: 1. Status: CRAWLING. Description: Start crawl dataTime: 2023-12-11 08:03:39.0
+18. ID Config: 1. Status: CRAWLED. Description: End crawl, data to D:\\Demo2023-12-11_08-03-39.csvTime: 2023-12-11 08:04:08.0
+19. ID Config: 1. Status: EXTRACTING. Description: Start extract dataTime: 2023-12-11 08:04:08.0
+20. ID Config: 1. Status: EXTRACTING. Description: Truncate successTime: 2023-12-11 08:04:08.0
+21. ID Config: 1. Status: EXTRACTING. Description: Truncate table stagingTime: 2023-12-11 08:04:08.0
+22. ID Config: 1. Status: EXTRACTING. Description: Load data to stagingTime: 2023-12-11 08:04:08.0
+23. ID Config: 1. Status: EXTRACTED. Description: Load data successTime: 2023-12-11 08:04:09.0
+24. ID Config: 1. Status: TRANSFORMING. Description: Start transformTime: 2023-12-11 08:04:09.0
+25. ID Config: 1. Status: TRANSFORMED. Description: Transform successTime: 2023-12-11 08:04:34.0
+26. ID Config: 1. Status: WH_LOADING. Description: Start load data to WarehouseTime: 2023-12-11 08:04:34.0
+27. ID Config: 1. Status: WH_LOADED. Description: Load to warehouse successTime: 2023-12-11 08:04:34.0
+28. ID Config: 1. Status: AGGREGATING. Description: Start aggregateTime: 2023-12-11 08:04:35.0
+29. ID Config: 1. Status: AGGREGATED. Description: Load aggregate successTime: 2023-12-11 08:04:35.0
+30. ID Config: 1. Status: MLOADING. Description: Start load data to DataMartTime: 2023-12-11 08:04:35.0
+31. ID Config: 1. Status: MLOADED. Description: Load to mart successTime: 2023-12-11 08:04:36.0
+32. ID Config: 1. Status: FINISHED. Description: Finished!Time: 2023-12-11 08:04:36.0
