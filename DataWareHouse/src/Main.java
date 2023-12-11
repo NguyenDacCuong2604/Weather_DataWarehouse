@@ -16,21 +16,25 @@ public class Main {
             List<Config> configs = dao.getConfigs(connection);
             Controller controller = new Controller();
             for (Config config : configs) {
-
                 int maxWait = 0;
+                //7. Khi có processing nào chạy và thời gian dưới 3 phút
                 while (dao.getProcessingCount(connection) != 0 && maxWait <= 3) {
                     System.out.println("Wait...");
+                    // 8. Chờ 1 phút, tăng biến thời gian
                     maxWait++;
                     Thread.sleep(60000); //60s
                 }
-                if (dao.getProcessingCount(connection) == 0) {
+                //9. Kiểm tra xem còn processing nào đang chạy không
+                if (dao.getProcessingCount(connection) == 0) { //Hết process đang chạy
                     System.out.println("Start");
+                    //10. Lấy status của config
                     String status = config.getStatus();
-                    //nếu lỗi thì không cần thực hiện
+                    //Nếu lỗi thì không cần thực hiện
                     if (status.equals("ERROR")) {
                         continue;
                     }
-                    //bước lấy dữ liệu từ API
+                    //11.  Kiểm tra xem status có phải là OFF hay FINISHED hay không
+                    
                     else if (status.equals("OFF") || status.equals("FINISHED")) {
                         controller.getData(connection, config);
                     } else if (status.equals("CRAWLED")) {
@@ -46,6 +50,7 @@ public class Main {
                     }
                 }
             }
+            // 6. Đóng kết nối database
             db.closeConnection();
         } catch (SQLException | InterruptedException e) {
             throw new RuntimeException(e);
