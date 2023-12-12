@@ -34,7 +34,7 @@ public class Controller {
     static String url;
     static List<String> cities;
     // Load attributes from the configuration file
-    static{
+    public static void loadAttribute(){
         Properties properties = new Properties();
         InputStream inputStream = null;
         try {
@@ -62,6 +62,7 @@ public class Controller {
 
 
     public void getData(Connection connection, Config config) {
+        loadAttribute();
         ForecastResultsDao dao = new ForecastResultsDao();
         dao.updateIsProcessing(connection, config.getId(), true);
         dao.updateStatus(connection, config.getId(), "CRAWLING");
