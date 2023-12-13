@@ -43,9 +43,9 @@ public class Controller {
             // load properties from file
             properties.load(inputStream);
             // get property by name
-            apiKey = properties.getProperty("apiKey");
-            url = properties.getProperty("url");
-            cities = convertCities(properties.getProperty("cities"));
+            apiKey = properties.getProperty("apiKey"); //key của account trên openweather
+            url = properties.getProperty("url"); //url lấy dữ liệu
+            cities = convertCities(properties.getProperty("cities")); //danh sách các khu vực muốn lấy dữ liệu
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -62,10 +62,14 @@ public class Controller {
 
 
     public void getData(Connection connection, Config config) {
+        //12. Load các thuộc tính để lấy dữ liệu từ API
         loadAttribute();
         ForecastResultsDao dao = new ForecastResultsDao();
+        //13. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
         dao.updateIsProcessing(connection, config.getId(), true);
+        //14. Cập nhật status của config thành CRAWLING (status=CRAWLING)
         dao.updateStatus(connection, config.getId(), "CRAWLING");
+        //15. Thêm thông tin đang craw dữ liệu vào log
         dao.insertLog(connection, config.getId(), "CRAWLING", "Start crawl data");
 
         //Create file datasource with pathSource
@@ -77,21 +81,21 @@ public class Controller {
         String pathSource = pathFileCsv + "\\" + fileName +dtf_file.format(now)+ ".csv";
         try {
 
-
+            //16. Tạo file csv dể lưu trữ dữ liệu lấy từ API
             CSVWriter writer = new CSVWriter(new FileWriter(pathSource));
             //Time now
             LocalDateTime dtf = LocalDateTime.now();
+            //17. Duyệt các thành phố có trong cities
             // loop i (city)
             Iterator<String> iterator = cities.iterator();
-
             while (iterator.hasNext()) {
+                //18. Kết nối URL với citi muốn lấy dữ liệu
                 String city = iterator.next();
                 //Connect URL API with city
                 String urlCity = String.format(url, city.replace(" ", "%20"), apiKey);
                 URL url = new URL(urlCity);
                 HttpURLConnection connectionHTTP = (HttpURLConnection) url.openConnection();
                 connectionHTTP.setRequestMethod("GET");
-
                 int responseCode = connectionHTTP.getResponseCode();
                 //Get ResponseCode
                 if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -111,6 +115,8 @@ public class Controller {
                     //Loop through forecast data and write to CSV
                     JsonArray forecasts = jsonResponse.getAsJsonArray("list");
                     for (int i = 0; i < forecasts.size(); i++) {
+                        //19. Lấy dữ liệu Json từ API, thời gian lấy dữ liệu ghi vào file CSV
+
                         //Create an ArrayList to hold all the data for each forecast entry
                         List<String> data = new ArrayList<>();
 
@@ -175,14 +181,16 @@ public class Controller {
 
                         JsonObject sysData = forecast.getAsJsonObject("sys");
                         data.add(sysData.get("pod").getAsString());
-
+                        //thời gian lấy dữ liệu
                         data.add(dtf.format(dt_now));
 
                         //Write data from arraylist to CSV
                         writer.writeNext(data.toArray(new String[0]));
                     }
                 } else {
+                    //20. Thêm thông tin lỗi khi lấy dữ liệu của thành phố đó vào log
                     dao.insertLog(connection, config.getId(), "ERROR", "Error get Data with city: "+ city);
+                    //21. Send mail thông báo lỗi lấy dữ liệu của thành phố đó
                     String mail = config.getEmail();
                     DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
                     LocalDateTime nowTime = LocalDateTime.now();
@@ -193,10 +201,20 @@ public class Controller {
                 }
             }
             writer.close();
+            System.out.println("CRAWLED success");
+            dao.updateDetailFilePath(connection, config.getId(), pathSource);
+            config.setDetailPathFile(pathSource);
+            dao.updateStatus(connection, config.getId(), "CRAWLED");
+            dao.insertLog(connection, config.getId(), "CRAWLED", "End crawl, data to "+pathSource);
+            extractToStaging(connection, config);
         } catch (IOException e) {
+            //22. Cập nhật status của config thành ERROR
             dao.updateStatus(connection, config.getId(), "ERROR");
+            //23. Thêm lỗi vào log
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            //24. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
+            //25. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -210,12 +228,6 @@ public class Controller {
             }
             else SendMail.sendMail(mail, subject, message);
         }
-        System.out.println("CRAWLED success");
-        dao.updateDetailFilePath(connection, config.getId(), pathSource);
-        config.setDetailPathFile(pathSource);
-        dao.updateStatus(connection, config.getId(), "CRAWLED");
-        dao.insertLog(connection, config.getId(), "CRAWLED", "End crawl, data to "+pathSource);
-        extractToStaging(connection, config);
     }
 
     public static void extractToStaging(Connection connection, Config config){
