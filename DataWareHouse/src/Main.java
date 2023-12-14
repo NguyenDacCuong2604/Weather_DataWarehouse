@@ -35,12 +35,16 @@ public class Main {
                     if (status.equals("ERROR")) {
                         continue;
                     }
-                    //11.  Kiểm tra xem status có phải là OFF hay FINISHED hay không
+                    //(Extract)11. Kiểm tra xem status có phải là OFF hay FINISHED hay không
                     else if (status.equals("OFF") || status.equals("FINISHED")) {
                         controller.getData(connection, config);
-                    } else if (status.equals("CRAWLED")) {
+                    }
+                    //(Extract To Staging)11. Kiểm tra xem status có phải là CRAWLED hay không
+                    else if (status.equals("CRAWLED")) {
                         controller.extractToStaging(connection, config);
-                    } else if (status.equals("EXTRACTED")) {
+                    }
+                    //(Transform Data)11. Kiểm tra xem status có phải là EXTRACTED hay không
+                    else if (status.equals("EXTRACTED")) {
                         controller.transformData(connection, config);
                     } else if (status.equals("TRANSFORMED")) {
                         controller.loadToWH(connection, config);

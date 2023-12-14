@@ -62,14 +62,14 @@ public class Controller {
 
 
     public void getData(Connection connection, Config config) {
-        //12. Load các thuộc tính để lấy dữ liệu từ API
+        //(Extract)12. Load các thuộc tính để lấy dữ liệu từ API
         loadAttribute();
         ForecastResultsDao dao = new ForecastResultsDao();
-        //13. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
+        //(Extract)13. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
         dao.updateIsProcessing(connection, config.getId(), true);
-        //14. Cập nhật status của config thành CRAWLING (status=CRAWLING)
+        //(Extract)14. Cập nhật status của config thành CRAWLING (status=CRAWLING)
         dao.updateStatus(connection, config.getId(), "CRAWLING");
-        //15. Thêm thông tin đang craw dữ liệu vào log
+        //(Extract)15. Thêm thông tin đang craw dữ liệu vào log
         dao.insertLog(connection, config.getId(), "CRAWLING", "Start crawl data");
 
         //Create file datasource with pathSource
@@ -81,15 +81,15 @@ public class Controller {
         String pathSource = pathFileCsv + "\\" + fileName +dtf_file.format(now)+ ".csv";
         try {
 
-            //16. Tạo file csv dể lưu trữ dữ liệu lấy từ API
+            //(Extract)16. Tạo file csv dể lưu trữ dữ liệu lấy từ API
             CSVWriter writer = new CSVWriter(new FileWriter(pathSource));
             //Time now
             LocalDateTime dtf = LocalDateTime.now();
-            //17. Duyệt các thành phố có trong cities
+            //(Extract)17. Duyệt các thành phố có trong cities
             // loop i (city)
             Iterator<String> iterator = cities.iterator();
             while (iterator.hasNext()) {
-                //18. Kết nối URL với citi muốn lấy dữ liệu
+                //(Extract)18. Kết nối URL với citi muốn lấy dữ liệu
                 String city = iterator.next();
                 //Connect URL API with city
                 String urlCity = String.format(url, city.replace(" ", "%20"), apiKey);
@@ -115,7 +115,7 @@ public class Controller {
                     //Loop through forecast data and write to CSV
                     JsonArray forecasts = jsonResponse.getAsJsonArray("list");
                     for (int i = 0; i < forecasts.size(); i++) {
-                        //19. Lấy dữ liệu Json từ API, thời gian lấy dữ liệu ghi vào file CSV
+                        //(Extract)19. Lấy dữ liệu Json từ API, thời gian lấy dữ liệu ghi vào file CSV
 
                         //Create an ArrayList to hold all the data for each forecast entry
                         List<String> data = new ArrayList<>();
@@ -188,9 +188,9 @@ public class Controller {
                         writer.writeNext(data.toArray(new String[0]));
                     }
                 } else {
-                    //20. Thêm thông tin lỗi khi lấy dữ liệu của thành phố đó vào log
+                    //(Extract)20. Thêm thông tin lỗi khi lấy dữ liệu của thành phố đó vào log
                     dao.insertLog(connection, config.getId(), "ERROR", "Error get Data with city: "+ city);
-                    //21. Send mail thông báo lỗi lấy dữ liệu của thành phố đó
+                    //(Extract)21. Send mail thông báo lỗi lấy dữ liệu của thành phố đó
                     String mail = config.getEmail();
                     DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
                     LocalDateTime nowTime = LocalDateTime.now();
@@ -202,19 +202,23 @@ public class Controller {
             }
             writer.close();
             System.out.println("CRAWLED success");
+            //(Extract)27. Cập nhật đường dẫn chi tiết của file CSV
             dao.updateDetailFilePath(connection, config.getId(), pathSource);
             config.setDetailPathFile(pathSource);
+            //(Extract)28. Cập nhật status của config thành CRAWLED
             dao.updateStatus(connection, config.getId(), "CRAWLED");
+            //(Extract)29. Thêm thông tin đã crawl dữ liệu vào log
             dao.insertLog(connection, config.getId(), "CRAWLED", "End crawl, data to "+pathSource);
+            //
             extractToStaging(connection, config);
         } catch (IOException e) {
-            //22. Cập nhật status của config thành ERROR
+            //(Extract)22. Cập nhật status của config thành ERROR
             dao.updateStatus(connection, config.getId(), "ERROR");
-            //23. Thêm lỗi vào log
+            //(Extract)23. Thêm lỗi vào log
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
-            //24. Chỉnh Flag=0 cho config
+            //(Extract)24. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
-            //25. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
+            //(Extract)25. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -232,12 +236,18 @@ public class Controller {
 
     public static void extractToStaging(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        //(Extract to Staging)12. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
         dao.updateIsProcessing(connection, config.getId(), true);
+        //(Extract to Staging)13. Cập nhật status của config thành EXTRACTING (status=EXTRACTING)
         dao.updateStatus(connection, config.getId(), "EXTRACTING");
+        //(Extract to Staging)14. Thêm thông tin đang extract to staging vào log
         dao.insertLog(connection, config.getId(), "EXTRACTING", "Start extract data");
+        //(Extract to Staging)15. Truncate table staging trong database staging
         //truncate table
         truncateTable(connection, config);
+        //(Extract to Staging)16. Thêm thông tin đã truncate table staging vào log
         dao.insertLog(connection, config.getId(), "EXTRACTING", "Truncate table staging");
+        //(Extract to Staging)17. Load dữ liệu file CSV vào table Staging bằng lệnh "Load Data Infile" trong mysql
         //load data to staging
         String sqlLoadData = "LOAD DATA INFILE ? INTO TABLE staging.staging FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n' IGNORE 0 LINES (\n" +
                 "    cod, message, cnt, city_id, city_name, city_latitude, city_longitude, city_country_code, city_population,\n" +
@@ -249,11 +259,15 @@ public class Controller {
             //Load data to staging
             PreparedStatement psLoadData = connection.prepareStatement(sqlLoadData);
             psLoadData.setString(1, config.getDetailPathFile());
-            dao.insertLog(connection, config.getId(), "EXTRACTING", "Load data to staging");
             psLoadData.execute();
+            //(Extract to Staging)18. Thêm thông tin đang load dữ liệu vào staging vào log
+            dao.insertLog(connection, config.getId(), "EXTRACTING", "Load data to staging");
             System.out.println("Load staging success");
+            //(Extract to Staging)19. Cập nhật status của config thành EXTRACTED
             dao.updateStatus(connection, config.getId(), "EXTRACTED");
+            //(Extract to Staging)20. Thêm thông tin đã load dữ liệu vào staging vào log
             dao.insertLog(connection, config.getId(), "EXTRACTED", "Load data success");
+            //
             transformData(connection, config);
 
         } catch (SQLException e) {
