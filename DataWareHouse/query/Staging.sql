@@ -1,8 +1,10 @@
+-- Tạo database staging 
 drop database if exists staging;
-
 create database staging character set utf8;
 use staging;
 
+
+-- Tạo table staging để chứa dữ liệu từ file csv load vào
 DROP table if exists staging;
 create table staging (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -44,7 +46,7 @@ create table staging (
     created_date VARCHAR(100) NULL DEFAULT NULL
 );
 
--- transform date
+-- Tạo procedure TransformDate để tham chiếu khóa chính table date_dim của warehouse vào thuộc tính _date của staging
 DROP PROCEDURE if EXISTS TransformDate;
 CREATE PROCEDURE TransformDate()
 BEGIN
@@ -54,21 +56,21 @@ BEGIN
     SET staging._date = dim.date_sk;
 END;
 
--- transform time 
+-- Tạo procedure TransformTime để tham chiếu khóa chính của table time_dim của warehouse vào thuộc tính _time của staging
 DROP PROCEDURE IF EXISTS TransformTime;
 CREATE PROCEDURE TransformTime()
 BEGIN
 		ALTER TABLE staging ADD COLUMN if not exists _time INT;
-		
 		UPDATE staging
 		JOIN warehouse.time_dim AS dim ON CAST(staging.dt_txt AS TIME) = dim.full_time
 		SET staging._time = dim.time_sk;
 END;
 
--- transform city 
+-- Tạo procedure TransformCity để tham chiếu khóa chính của table city_dim của warehouse vào thuộc tính _city của staging
 drop procedure if exists TransformCity;
 create procedure TransformCity()
 begin
+		-- Tạo table tạm để chứa dữ liệu City
 		create temporary table TempCity(
 			city_id VARCHAR(100)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
 			city_name VARCHAR(100)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
@@ -78,10 +80,10 @@ begin
 			city_population INT,
 			city_timezone INT
 		);
-		
+		-- Insert dữ liệu riêng biệt của City vào table tạm
 		INSERT into TempCity
 		select distinct city_id, city_name, CAST(city_latitude as DOUBLE), CAST(city_longitude as DOUBLE), city_country_code, CAST(city_population as INT), CAST(city_timezone as INT) FROM staging;
-		
+		-- Thêm dữ liệu city vào nếu dữ liệu city đó chưa có trong table city_dim
 		INSERT into warehouse.city_dim(city_id, city_name, city_lat, city_lon, city_country, city_population, city_timezone)
 		select city_id, city_name, city_lat, city_lon, city_country_code, city_population, city_timezone from TempCity
 		where not exists (
@@ -94,8 +96,8 @@ begin
 			&& warehouse.city_dim.city_population = TempCity.city_population
 			&& warehouse.city_dim.city_timezone = TempCity.city_timezone
 		);
+		-- Cập nhật giá trị _city cho từng dữ liệu trong staging = khóa chính của city_dim
 		ALTER TABLE staging ADD COLUMN if not exists _city INT;
-		
 		update staging join warehouse.city_dim as dim on 
 		staging.city_id = dim.city_id &&
 		staging.city_name = dim.city_name &&
@@ -105,23 +107,25 @@ begin
 		cast(staging.city_population as INT) = dim.city_population &&
 		cast(staging.city_timezone as INT) = dim.city_timezone
 		set staging._city = dim.id;
-		
+		-- Xóa table tạm
 		drop TEMPORARY table TempCity;
 end;
 
--- transform weather
+-- Tạo procedure TransformWeather để tham chiếu khóa chính của table weather_dim của warehouse vào thuộc tính _weather của staging
 drop procedure if exists TransformWeather;
 create procedure TransformWeather()
 begin
+		-- Tạo table tạm để chứa dữ liệu Weather
 		create temporary table TempWeather(
 			weather_id INT,
 			weather_main VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
 			weather_description VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
 			weather_icon VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 		);
+		-- Insert dữ liệu riêng biệt của Weather vào table tạm
 		INSERT into TempWeather
-		select distinct cast(weather_id as int), weather_main, weather_description, weather_icon
-		 FROM staging;
+		select distinct cast(weather_id as int), weather_main, weather_description, weather_icon FROM staging;
+		-- Thêm dữ liệu weather vào nếu dữ liệu weather đó chưa có trong table weather_dim
 		INSERT into warehouse.weather_dim(weather_id, weather_main, weather_description, weather_icon)
 		select weather_id, weather_main, weather_description, weather_icon from TempWeather
 		where not exists (
@@ -132,14 +136,15 @@ begin
 						dim.weather_icon = TempWeather.weather_icon
 						
 		);
+		-- Cập nhật giá trị _weather cho từng dữ liệu trong staging = khóa chính của weather_dim
 		ALTER TABLE staging ADD COLUMN if not exists _weather INT;
-	
 		update staging join warehouse.weather_dim as dim on 
 			cast(staging.weather_id as INT) = dim.weather_id &&
 			staging.weather_main = dim.weather_main &&
 			staging.weather_description = dim.weather_description &&
 			staging.weather_icon = dim.weather_icon
-		set staging._weather = dim.id;		
+		set staging._weather = dim.id;
+		-- Xóa table tạm		
 		drop TEMPORARY table TempWeather;
 end;
 

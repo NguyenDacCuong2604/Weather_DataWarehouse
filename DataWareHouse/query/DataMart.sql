@@ -1,8 +1,9 @@
+-- Tạo database DataMart
 drop database if exists DataMart;
-
 create database DataMart;
 use DataMart;
 
+-- Tạo table forecast để chứa dữ liệu mà report connect vào để lấy dữ liệu
 drop table if exists forecast;
 create table forecast(
 	id int primary key not null,
@@ -21,6 +22,7 @@ create table forecast(
 	weather_icon varchar(100) null default null
 );
 
+-- Tạo table forecast_temp để chứa dữ liệu tạm khi lấy từ warehouse
 drop table if exists forecast_temp;
 create table forecast_temp(
 	id int primary key not null,

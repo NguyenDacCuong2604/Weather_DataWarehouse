@@ -17,6 +17,7 @@ public class Main {
             //4. Lấy danh sách config trong table config có flag = 1
             List<Config> configs = dao.getConfigs(connection);
             Controller controller = new Controller();
+            //5. Duyệt for lấy lần lượt từng config trong list
             for (Config config : configs) {
                 int maxWait = 0;
                 //7. Khi có processing nào chạy và thời gian dưới 3 phút
@@ -46,11 +47,17 @@ public class Main {
                     //(Transform Data)11. Kiểm tra xem status có phải là EXTRACTED hay không
                     else if (status.equals("EXTRACTED")) {
                         controller.transformData(connection, config);
-                    } else if (status.equals("TRANSFORMED")) {
+                    }
+                    //(Load To WH)11. Kiểm tra xem status có phải là TRANSFORMED hay không
+                    else if (status.equals("TRANSFORMED")) {
                         controller.loadToWH(connection, config);
-                    } else if (status.equals("WH_LOADED")) {
+                    }
+                    //(Load To Aggregate)11. Kiểm tra xem status có phải là WH_LOADED hay không
+                    else if (status.equals("WH_LOADED")) {
                         controller.loadToAggregate(connection, config);
-                    } else if (status.equals("AGGREGATED")) {
+                    }
+                    //(Load To DataMart)11. Kiểm tra xem status có phải là AGGREGATED hay không
+                    else if (status.equals("AGGREGATED")) {
                         controller.loadToDataMart(connection, config);
                     }
                 }

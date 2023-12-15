@@ -315,23 +315,33 @@ public class Controller {
     public static void transformData(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
         dao.updateIsProcessing(connection, config.getId(), true);
+        //(Transform Data)13. Cập nhật status của config thành TRANSFORMING (status=TRANSFORMING)
         dao.updateStatus(connection, config.getId(), "TRANSFORMING");
+        //(Transform Data)14. Thêm thông tin đang transform vào log
         dao.insertLog(connection, config.getId(), "TRANSFORMING", "Start transform");
+        //(Transform Data)15. Transform Data
         try (CallableStatement callableStatement = connection.prepareCall("{CALL TransformData()}")) {
             // Thực hiện stored procedure
             callableStatement.execute();
-
+            //(Transform Data)16. Cập nhật status của config thành TRANSFORMED
             dao.updateStatus(connection, config.getId(), "TRANSFORMED");
+            //(Transform Data)17. Thêm thông tin đã transform data vào log
             dao.insertLog(connection, config.getId(), "TRANSFORMED", "Transform success");
             System.out.println("transform success!");
+            //(Transform Data)18. Gọi function loadToWH(connect, config)
             loadToWH(connection, config);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
+            //(Transform Data)19. Cập nhật status của config thành ERROR
             dao.updateStatus(connection, config.getId(), "ERROR");
+            //(Transform Data)20. Thêm lỗi vào log
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            //(Transform Data)21. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
+            //(Transform Data)22. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
+            //(Transform Data)23. Send mail thông báo lỗi cho email của author
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
             LocalDateTime nowTime = LocalDateTime.now();
@@ -348,24 +358,35 @@ public class Controller {
 
     public static void loadToWH(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        //(Load To WH)12. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
         dao.updateIsProcessing(connection, config.getId(), true);
+        //(Load To WH)13. Cập nhật status của config thành WH_LOADING (status=WH_LOADING)
         dao.updateStatus(connection, config.getId(), "WH_LOADING");
+        //(Load To WH)14. Thêm thông tin bắt đầu load to wh vào log
         dao.insertLog(connection, config.getId(), "WH_LOADING", "Start load data to Warehouse");
+        //(Load To WH)15. Load Data To WH
         try (CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToWH()}")) {
             // Thực hiện stored procedure
             callableStatement.execute();
-
+            //(Load To WH)16. Cập nhật status của config thành WH_LOADED
             dao.updateStatus(connection, config.getId(), "WH_LOADED");
+            //(Load To WH)17. Thêm thông tin đã load data to WH vào log
             dao.insertLog(connection, config.getId(), "WH_LOADED", "Load to warehouse success");
             System.out.println("load to warehouse success!");
+            //(Load To WH)18. Gọi function loadToAggregate(connect, config)
             loadToAggregate(connection, config);
         } catch (SQLException e) {
             // Xử lý lỗi khi thực hiện stored procedure
             e.printStackTrace();
+            //(Load To WH)19. Cập nhật status của config thành ERROR
             dao.updateStatus(connection, config.getId(), "ERROR");
+            //(Load To WH)20. Thêm lỗi vào log
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            //(Load To WH)21. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
+            //(Load To WH)22. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
+            //(Load To WH)23. Send mail thông báo lỗi cho email của author
             //send mail
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -383,21 +404,33 @@ public class Controller {
 
     public static void loadToAggregate(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        //(Load To Aggregate)12. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
         dao.updateIsProcessing(connection, config.getId(), true);
+        //(Load To Aggregate)13. Cập nhật status của config thành AGGREGATING (status=AGGREGATING)
         dao.updateStatus(connection, config.getId(), "AGGREGATING");
+        //(Load To Aggregate)14. Thêm thông tin bắt đầu load to aggregate vào log
         dao.insertLog(connection, config.getId(), "AGGREGATING", "Start aggregate");
+        //(Load To Aggregate)15. Load Data To Aggregate
         try(CallableStatement callableStatement = connection.prepareCall("{CALL LoadDataToAggregate()}")){
             callableStatement.execute();
+            //(Load To Aggregate)16. Cập nhật status của config thành AGGREGATED
             dao.updateStatus(connection, config.getId(),"AGGREGATED");
+            //(Load To Aggregate)17. Thêm thông tin đã load data to aggregate vào log
             dao.insertLog(connection, config.getId(), "AGGREGATED", "Load aggregate success");
             System.out.println("aggregate success!");
+            //(Load To Aggregate)18. Gọi function loadToDataMart(connect, config)
             loadToDataMart(connection, config);
         }catch (SQLException e) {
             e.printStackTrace();
+            //(Load To Aggregate)19. Cập nhật status của config thành ERROR
             dao.updateStatus(connection, config.getId(), "ERROR");
+            //(Load To Aggregate)20. Thêm lỗi vào log
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            //(Load To Aggregate)21. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
+            //(Load To Aggregate)22. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
+            //(Load To Aggregate)23. Send mail thông báo lỗi cho email của author
             //send mail
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -415,19 +448,30 @@ public class Controller {
 
     public static void loadToDataMart(Connection connection, Config config){
         ForecastResultsDao dao = new ForecastResultsDao();
+        //(Load To DataMart)12. Cập nhật  trạng thái của config là đang xử lý (isProcessing=true)
         dao.updateIsProcessing(connection, config.getId(), true);
+        //(Load To DataMart)13. Cập nhật status của config thành MLOADING (status=MLOADING)
         dao.updateStatus(connection, config.getId(), "MLOADING");
+        //(Load To DataMart)14. Thêm thông tin bắt đầu load to datamart vào log
         dao.insertLog(connection, config.getId(), "MLOADING", "Start load data to DataMart");
+        //(Load To DataMart)15. Load Data To DataMart
         try(CallableStatement callableStatement = connection.prepareCall("{CALL LoadToDM()}")){
            callableStatement.execute();
+            //(Load To DataMart)16. Cập nhật status của config thành MLOADED
             dao.updateStatus(connection, config.getId(), "MLOADED");
+            //(Load To DataMart)17. Thêm thông tin đã load data to datamart vào log
             dao.insertLog(connection, config.getId(), "MLOADED", "Load to mart success");
             System.out.println("load to mart success!");
             //finish
+            //(Load To DataMart)18. Cập nhật status của config thành FINISHED
             dao.updateStatus(connection, config.getId(), "FINISHED");
+            //(Load To DataMart)19. Thêm thông tin đã hoàn thành tiến trình vào log
             dao.insertLog(connection, config.getId(), "FINISHED", "Finished!");
+            //(Load To DataMart)20. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
+            //(Load To DataMart)21. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
+            //(Load To DataMart)22. Send mail thông báo tiến trình hoàn tất cho email của author
             //send mail khi đã hoàn thành việc lấy data load vào warehouse
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");
@@ -442,10 +486,15 @@ public class Controller {
             else SendMail.sendMail(mail, subject, message);
         }catch (SQLException e){
             e.printStackTrace();
+            //(Load To DataMart)23. Cập nhật status của config thành ERROR
             dao.updateStatus(connection, config.getId(), "ERROR");
+            //(Load To DataMart)24. Thêm lỗi vào log
             dao.insertLog(connection, config.getId(), "ERROR", "Error with message: "+e.getMessage());
+            //(Load To DataMart)25. Chỉnh Flag=0 cho config
             dao.setFlagIsZero(connection, config.getId());
+            //(Load To DataMart)26. Cập nhật trạng thái của config là không xử lý (isProcessing=false)
             dao.updateIsProcessing(connection, config.getId(), false);
+            //(Load To DataMart)27. Send mail thông báo lỗi cho email của author
             //send mail
             String mail = config.getEmail();
             DateTimeFormatter dt = DateTimeFormatter.ofPattern("hh:mm:ss dd/MM/yyyy");

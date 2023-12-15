@@ -1,9 +1,9 @@
+-- Tạo database warehouse 
 DROP database if exists warehouse;
 create database warehouse character set utf8;
-
 use warehouse;
 
--- date dim 
+-- Tạo table date_dim chứa thông tin về ngày 
 DROP TABLE if exists date_dim;
 CREATE TABLE date_dim (
     date_sk INT PRIMARY KEY,
@@ -25,12 +25,11 @@ CREATE TABLE date_dim (
     holiday VARCHAR(500),
     day_type VARCHAR(500)
 );
-create index idx_full_date on date_dim(full_date);
+create index idx_full_date on date_dim(full_date); -- Tạo index để truy vấn vào table date_dim hiệu quả hơn
 
+-- Load dữ liệu date vào table date_dim từ file csv
 TRUNCATE TABLE date_dim;
--- load data ininfile
 LOAD DATA INFILE 'D:\\Github\\Weather_DataWarehouse\\DataWareHouse\\date_dim_without_quarter.csv' INTO TABLE date_dim FIELDS TERMINATED BY ','
--- OPTIONALLY ENCLOSED BY '"' 
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 ( 
@@ -54,8 +53,7 @@ holiday ,
 day_type 
 ); 
 
-
--- time dim 
+-- Tạo table time_dim chứa thông tin về giờ trong ngày
 DROP TABLE if exists time_dim;
 CREATE TABLE time_dim (
     time_sk INT PRIMARY KEY,
@@ -64,8 +62,9 @@ CREATE TABLE time_dim (
 		_second VARCHAR(2),
 		full_time Time
 );
-create index idx_full_time on time_dim(full_time);
+create index idx_full_time on time_dim(full_time); -- Tạo index để truy vấn vào dữ liệu time_dim hiệu quả hơn
 
+-- Load dữ liệu time vào table time_dim từ file csv
 TRUNCATE TABLE time_dim;
 LOAD DATA INFILE 'D:\\Github\\Weather_DataWarehouse\\DataWareHouse\\time_dim.csv' INTO TABLE time_dim FIELDS TERMINATED BY ','
 -- OPTIONALLY ENCLOSED BY '"' 
@@ -79,7 +78,7 @@ _second,
 full_time
 ); 
 
--- city
+-- Tạo table city_dim chứa thông tin về thành phố 
 drop table if EXISTS city_dim;
 create table city_dim(
 	id int primary key auto_increment,
@@ -94,7 +93,7 @@ create table city_dim(
   dt_expired datetime NULL DEFAULT NULL
 );
 
--- weather
+-- Tạo table weather_dim chứa thông tin về thời tiết
 drop table if exists weather_dim;
 create table weather_dim(
 	id int primary key auto_increment,
@@ -106,7 +105,7 @@ create table weather_dim(
   dt_expired datetime NULL DEFAULT NULL
 );
 
--- fact
+-- Tạo table fact chứa các id của các bảng dim và các giá trị khác
 drop table if exists fact;
 CREATE TABLE fact (
     id_fact INT PRIMARY KEY AUTO_INCREMENT,
@@ -140,9 +139,6 @@ CREATE TABLE fact (
 		FOREIGN KEY (id_date) REFERENCES date_dim(date_sk) ON DELETE RESTRICT ON UPDATE RESTRICT,
     FOREIGN KEY (id_weather) REFERENCES weather_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
-
-
--- TRIGGER
 
 -- city
 drop trigger if exists dt_expired_city;
