@@ -140,22 +140,22 @@ CREATE TABLE fact (
     FOREIGN KEY (id_weather) REFERENCES weather_dim(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
--- city
+-- Tạo trigger dt_expired_city để cập nhật hạn sử dụng của dữ liệu city sau khi insert mỗi dòng dữ liệu
 drop trigger if exists dt_expired_city;
 create trigger dt_expired_city before insert on city_dim for each row begin set NEW.dt_expired = "9999-12-31 23:59:59";
 end;
 
--- weather
+-- Tạo trigger dt_expried_weather để cập nhật hạn sử dụng của dữ liệu weather sau khi insert mỗi dòng dữ liệu
 drop trigger if exists dt_expired_weather;
 create trigger dt_expired_weather before insert on weather_dim for each row begin set NEW.dt_expired = "9999-12-31 23:59:59";
 end;
 
--- fact
+-- Tạo trigger dt_expried_fact để cập nhật hạn sử dụng của dữ liệu trong fact sau khi insert mỗi dòng dữ liệu
 drop trigger if exists dt_expired_fact;
 create trigger dt_expired_fact before insert on fact for each row begin set NEW.dtExpired = "9999-12-31 23:59:59";
 end;
 
-
+-- Tạo procedure SetDataExpired để cập nhật hạn sử dụng của dữ liệu = thời gian hiện tại với điều kiện các dữ liệu có isDelete=0
 drop procedure if exists SetDataExpired;
 create procedure SetDataExpired()
 BEGIN
@@ -165,7 +165,7 @@ BEGIN
 end;
 
 
--- Table Aggregate
+-- Tạo bảng table aggregate forecast_results để tổng hợp dữ liệu dể chuyển đến data mart
 drop table if EXISTS forecast_results;
 create table forecast_results(
 	id int primary key not null,
